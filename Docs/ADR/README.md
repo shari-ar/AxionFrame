@@ -1,6 +1,15 @@
 # Architecture Decision Records (ADR)
 
-ADR files record significant technical and structural decisions.
+ADR files capture significant technical and structural decisions.
+
+## Scope
+
+ADR records decisions for:
+
+- Add-in command model.
+- Software and mechanical documentation structure.
+- Export pipeline behavior.
+- Configuration and validation contracts.
 
 ## Naming Pattern
 
@@ -8,7 +17,7 @@ ADR files record significant technical and structural decisions.
 
 Example:
 
-`ADR-0001-Docs-Information-Architecture.md`
+`ADR-0001-Addin-Build-and-Final-Output-Flow.md`
 
 ## ADR Template
 

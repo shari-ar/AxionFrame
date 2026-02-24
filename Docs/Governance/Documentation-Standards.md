@@ -1,12 +1,12 @@
 # Documentation Standards
 
-- **Version:** 1.0
+- **Version:** 1.1
 - **Last Updated:** 2026-02-24
 
 ## Naming Standard
 
 - Folder names use PascalCase.
-- Markdown file names use PascalCase with descriptive scope.
+- Markdown files use descriptive PascalCase names.
 - Versioned documents include a version header.
 
 ## Document Header Standard
@@ -26,6 +26,15 @@ Each document provides:
 - Clear structure with headings.
 - Actionable lists and explicit outputs.
 - Links to related documents.
+
+## Product Alignment Standard
+
+Workflow and architecture documents align with this product behavior:
+
+- AxionFrame runs as a SolidWorks Add-in.
+- User updates default settings.
+- User clicks **Build** for CAD generation.
+- User clicks **Final Output** for STEP, DXF, BOM, and report generation.
 
 ## Update Workflow
 

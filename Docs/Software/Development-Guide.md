@@ -1,20 +1,25 @@
 # Software Development Guide
 
-- **Version:** 1.0
+- **Version:** 1.1
 - **Last Updated:** 2026-02-24
 
 ## Repository Conventions
 
-- C# source remains under `API/`.
-- New software components align with architecture layers.
-- Every domain module publishes a clear interface.
+- C# source resides under `API/`.
+- Software components align with architecture layers.
+- Domain modules publish clear interfaces.
+
+## Add-in Command Model
+
+- **Build Command** orchestrates CAD generation flow.
+- **Final Output Command** orchestrates export flow and report generation.
 
 ## Testing Strategy
 
 `API/Tests` uses three suites:
 
 - `Unit/` for parser, validator, naming, and path logic.
-- `Integration/` for generation flow in controlled SolidWorks sessions.
+- `Integration/` for Add-in flow and CAD generation workflow.
 - `Regression/` for stability checks across revisions.
 
 ## Definition of Ready

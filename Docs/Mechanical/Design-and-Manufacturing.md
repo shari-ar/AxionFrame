@@ -1,11 +1,11 @@
 # Mechanical Design and Manufacturing Guide
 
-- **Version:** 1.0
+- **Version:** 1.1
 - **Last Updated:** 2026-02-24
 
 ## Design Intent
 
-The mechanical system delivers a modular X-frame table with height-adjustable configurations and bolted joints suitable for production workflows.
+The mechanical system delivers a modular X-frame table with height-adjustable configurations and bolted joints for production workflows.
 
 ## Core Mechanical Areas
 
@@ -14,9 +14,15 @@ The mechanical system delivers a modular X-frame table with height-adjustable co
 - Height indexing strategy for supported table configurations.
 - Plate and brace details with manufacturable dimensions.
 
+## Relationship to Add-in User Flow
+
+- User updates default settings in SolidWorks Add-in.
+- User clicks **Build** to generate CAD parts and assemblies.
+- User clicks **Final Output** to generate manufacturing deliverables.
+
 ## Manufacturing Deliverables
 
-Each release run targets:
+Each final-output run creates:
 
 - Assembly files.
 - Part files.

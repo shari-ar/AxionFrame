@@ -135,20 +135,23 @@
     <Compile Include="SwAddin.cs">
       <SubType>Code</SubType>
     </Compile>
+    <Compile Include="Core\SwAddin.Registration.cs" />
+    <Compile Include="Core\SwAddin.CommandManager.cs" />
+    <Compile Include="Core\SwAddin.Events.cs" />
     <Compile Include="UserPMPage.cs" />
-    <EmbeddedResource Include="mainicon_20.png" />
-    <EmbeddedResource Include="mainicon_32.png" />
-    <EmbeddedResource Include="mainicon_40.png" />
-    <EmbeddedResource Include="mainicon_64.png" />
-    <EmbeddedResource Include="mainicon_96.png" />
-    <EmbeddedResource Include="mainicon_128.png" />
-    <EmbeddedResource Include="toolbar20x.png" />
-    <EmbeddedResource Include="toolbar32x.png" />
-    <EmbeddedResource Include="toolbar40x.png" />
-    <EmbeddedResource Include="toolbar64x.png" />
-    <EmbeddedResource Include="toolbar96x.png" />
-    <EmbeddedResource Include="toolbar128x.png" />
-    <EmbeddedResource Include="AddinIcon.bmp" />
+    <EmbeddedResource Include="Resources\mainicon_20.png" />
+    <EmbeddedResource Include="Resources\mainicon_32.png" />
+    <EmbeddedResource Include="Resources\mainicon_40.png" />
+    <EmbeddedResource Include="Resources\mainicon_64.png" />
+    <EmbeddedResource Include="Resources\mainicon_96.png" />
+    <EmbeddedResource Include="Resources\mainicon_128.png" />
+    <EmbeddedResource Include="Resources\toolbar20x.png" />
+    <EmbeddedResource Include="Resources\toolbar32x.png" />
+    <EmbeddedResource Include="Resources\toolbar40x.png" />
+    <EmbeddedResource Include="Resources\toolbar64x.png" />
+    <EmbeddedResource Include="Resources\toolbar96x.png" />
+    <EmbeddedResource Include="Resources\toolbar128x.png" />
+    <EmbeddedResource Include="Resources\AddinIcon.bmp" />
   </ItemGroup>
   <ItemGroup>
     <BootstrapperPackage Include="Microsoft.Net.Framework.3.5.SP1">
@@ -163,31 +166,31 @@
     </PreBuildEvent>
     <PostBuildEvent>
 IF EXIST "$(TargetDir)$(TargetName).bmp" (GOTO REGISTRATION)
-XCOPY "$(ProjectDir)AddinIcon.bmp" "$(TargetDir)"  /F
+XCOPY "$(ProjectDir)Resources\AddinIcon.bmp" "$(TargetDir)"  /F
 REN "$(TargetDir)AddinIcon.bmp" "$(TargetName).bmp" 
 
 IF EXIST "$(TargetDir)$(TargetName)_20.png" (GOTO REGISTRATION)
-XCOPY "$(ProjectDir)mainicon_20.png" "$(TargetDir)"  /F
+XCOPY "$(ProjectDir)Resources\mainicon_20.png" "$(TargetDir)"  /F
 REN "$(TargetDir)mainicon_20.png" "$(TargetName)_20.png" 
 
 IF EXIST "$(TargetDir)$(TargetName)_32.png" (GOTO REGISTRATION)
-XCOPY "$(ProjectDir)mainicon_32.png" "$(TargetDir)"  /F
+XCOPY "$(ProjectDir)Resources\mainicon_32.png" "$(TargetDir)"  /F
 REN "$(TargetDir)mainicon_32.png" "$(TargetName)_32.png" 
 
 IF EXIST "$(TargetDir)$(TargetName)_40.png" (GOTO REGISTRATION)
-XCOPY "$(ProjectDir)mainicon_40.png" "$(TargetDir)"  /F
+XCOPY "$(ProjectDir)Resources\mainicon_40.png" "$(TargetDir)"  /F
 REN "$(TargetDir)mainicon_40.png" "$(TargetName)_40.png" 
 
 IF EXIST "$(TargetDir)$(TargetName)_64.png" (GOTO REGISTRATION)
-XCOPY "$(ProjectDir)mainicon_64.png" "$(TargetDir)"  /F
+XCOPY "$(ProjectDir)Resources\mainicon_64.png" "$(TargetDir)"  /F
 REN "$(TargetDir)mainicon_64.png" "$(TargetName)_64.png" 
 
 IF EXIST "$(TargetDir)$(TargetName)_96.png" (GOTO REGISTRATION)
-XCOPY "$(ProjectDir)mainicon_96.png" "$(TargetDir)"  /F
+XCOPY "$(ProjectDir)Resources\mainicon_96.png" "$(TargetDir)"  /F
 REN "$(TargetDir)mainicon_96.png" "$(TargetName)_96.png" 
 
 IF EXIST "$(TargetDir)$(TargetName)_128.png" (GOTO REGISTRATION)
-XCOPY "$(ProjectDir)mainicon_128.png" "$(TargetDir)"  /F
+XCOPY "$(ProjectDir)Resources\mainicon_128.png" "$(TargetDir)"  /F
 REN "$(TargetDir)mainicon_128.png" "$(TargetName)_128.png"
 	
 :REGISTRATION

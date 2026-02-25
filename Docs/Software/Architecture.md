@@ -1,15 +1,17 @@
 # Software Architecture
 
+- **Title:** Software Architecture
 - **Version:** 1
+- **Scope:** This document defines the software architecture, layers, and design principles for the AxionFrame SolidWorks Add-in.
 
-## Scope
+## Platform Scope
 
 AxionFrame is a SolidWorks Add-in platform for parametric generation of a modular, height-adjustable X-frame table and manufacturing deliverables.
 
 ## Primary User Actions in Add-in UI
 
-- **Build**: generates CAD files (parts and assemblies).
-- **Final Output**: generates STEP, DXF, BOM, and report files in `Output/`.
+- **Build**: Generates CAD files (parts and assemblies).
+- **Final Output**: Generates STEP, DXF, BOM, and report files in `Output/`.
 
 ## Layered Architecture
 

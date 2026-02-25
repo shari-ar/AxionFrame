@@ -1,6 +1,8 @@
 # Mechanical Design and Manufacturing Guide
 
+- **Title:** Mechanical Design and Manufacturing Guide
 - **Version:** 1
+- **Scope:** This document defines mechanical design intent, manufacturing outputs, and traceability points for AxionFrame.
 
 ## Design Intent
 
@@ -15,9 +17,9 @@ The mechanical system delivers a modular X-frame table with height-adjustable co
 
 ## Relationship to Add-in User Flow
 
-- User can change default settings in SolidWorks Add-in.
-- User clicks **Build** to generate CAD parts and assemblies.
-- User clicks **Final Output** to generate manufacturing deliverables.
+- Users can change default settings in the SolidWorks Add-in.
+- Users select **Build** to generate CAD parts and assemblies.
+- Users select **Final Output** to generate manufacturing deliverables.
 
 ## Manufacturing Deliverables
 

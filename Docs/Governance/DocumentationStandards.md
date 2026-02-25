@@ -1,6 +1,8 @@
 # Documentation Standards
 
+- **Title:** Documentation Standards
 - **Version:** 1
+- **Scope:** This document defines naming, header, and quality standards for all documentation in `Docs/`.
 
 ## Naming Standard
 
@@ -30,13 +32,12 @@ Each document provides:
 Workflow and architecture documents align with this product behavior:
 
 - AxionFrame runs as a SolidWorks Add-in.
-- User can change default settings.
-- User clicks **Build** for CAD generation.
-- User clicks **Final Output** for STEP, DXF, BOM, and report generation.
+- Users can change default settings.
+- Users select **Build** for CAD generation.
+- Users select **Final Output** for STEP, DXF, BOM, and report generation.
 
 ## Update Workflow
 
 1. Update content.
 2. Confirm links and references.
-3. Record structural decisions in ADR when relevant.
-4. Commit with a clear documentation message.
+3. Commit with a clear documentation message.

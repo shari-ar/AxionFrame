@@ -1,6 +1,8 @@
 # Software Development Guide
 
+- **Title:** Software Development Guide
 - **Version:** 1
+- **Scope:** This document defines repository conventions, command behavior, and readiness and completion criteria for software delivery.
 
 ## Repository Conventions
 

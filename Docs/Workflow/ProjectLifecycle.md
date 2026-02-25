@@ -1,6 +1,8 @@
 # Project Lifecycle Workflow
 
-- **Version:** 1
+- **Title:** Project Lifecycle Workflow
+- **Version:** 2
+- **Scope:** This document defines lifecycle phases, runtime flow, build scope, final output scope, and release flow.
 
 ## Lifecycle
 
@@ -16,10 +18,10 @@
 
 1. User opens the AxionFrame Add-in inside SolidWorks.
 2. User can change default settings in the Add-in interface.
-3. User clicks **Build**.
+3. User selects **Build**.
 4. Add-in generates CAD parts and assemblies.
 5. User reviews generated CAD in SolidWorks.
-6. User clicks **Final Output**.
+6. User selects **Final Output**.
 7. Add-in generates STEP, DXF, BOM, and reports in `Output/`.
 8. Add-in presents a run summary with generated files.
 
@@ -48,4 +50,4 @@ Final Output operation covers:
 1. Revision metadata is updated.
 2. Deliverables are generated in a versioned run path.
 3. Release artifacts are promoted to a release folder.
-4. Documentation and ADR records are updated.
+4. Documentation records are updated.

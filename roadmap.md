@@ -1,305 +1,380 @@
-# AxionFrame Integrated Delivery Roadmap
+# AxionFrame Program Roadmap (Software + Mechanical)
 
-- **Title:** AxionFrame Integrated Delivery Roadmap
-- **Version:** 2
-- **Scope:** End-to-end execution plan for software developers and mechanical engineers to deliver AxionFrame Build and Final Output capabilities with measurable, auditable progress.
-- **Baseline Sources:** `Docs/Workflow/ProjectLifecycle.md`, `Docs/Software/Architecture.md`, `Docs/Software/DevelopmentGuide.md`, `Docs/Mechanical/DesignAndManufacturing.md`, `Docs/Governance/DocumentationStandards.md`.
-
-## 1) Delivery Standard
-
-This roadmap uses a **stage-gate model** with explicit dependencies and measurable completion evidence.
-
-### 1.1 Completion rule (applies to every step)
-A step is complete only when all three conditions are met:
-1. **Artifact exists** (file, model, report, CI result, package).
-2. **Verification evidence exists** (log, screenshot, URL, path, dashboard, checklist).
-3. **Acceptance metric passes** (numeric/boolean criterion below).
-
-### 1.2 Complexity scale
-- **H (High):** Cross-discipline dependency and high rework risk.
-- **M (Medium):** Moderate scope, bounded dependencies.
-- **L (Low):** Administrative/documentation task.
-
-### 1.3 Required evidence locations
-- `Docs/` for design/decision records.
-- CI pipeline URL(s) and run IDs.
-- `Output/<run-id>/` for generated manufacturing deliverables.
-- Release note/changelog commit and release artifact path.
+- **Title:** AxionFrame Program Roadmap
+- **Version:** 3
+- **Scope:** Integrated delivery roadmap for software developers and mechanical engineers to deliver AxionFrame Build and Final Output capabilities with auditable, measurable progress.
+- **Standards Basis:** Stage-gate product delivery, requirements traceability, test-gated release, and evidence-based completion criteria.
+- **Source Documents:**
+  - `Docs/Workflow/ProjectLifecycle.md`
+  - `Docs/Software/Architecture.md`
+  - `Docs/Software/DevelopmentGuide.md`
+  - `Docs/Mechanical/DesignAndManufacturing.md`
+  - `Docs/Governance/DocumentationStandards.md`
 
 ---
 
-## 2) Sequenced Roadmap (dependency-validated)
+## 1) Delivery Governance Model
 
-## Stage A — Requirements Baseline (Gate A)
+## 1.1 Roles
+- **SW (Software Engineering):** Add-in host behavior, orchestration, validation, export pipeline, automated tests, release packaging.
+- **ME (Mechanical Engineering):** Mechanical design rules, tolerance and manufacturability criteria, output validity for production.
+- **Joint (SW+ME):** Rule traceability, quality gates, release approval.
 
-| ID | Step | Owner(s) | Complexity | Depends On |
-|---|---|---|---|---|
-| A1 | Confirm lifecycle scope and outputs | SW + ME | M | — |
-| A2 | Build mechanical rule matrix (traceable) | ME (lead), SW (support) | H | A1 |
-| A3 | Define feature Definition of Ready (DoR) template | SW | M | A1, A2 |
+## 1.2 Step Completion Standard (applies to every step)
+A step is complete only if all items are present:
+1. **Deliverable artifact** exists (document, CAD output, test run, package).
+2. **Verification evidence** exists (screenshot, log, URL, dashboard, checklist).
+3. **Acceptance metric** is met (explicit pass/fail threshold).
 
-### A1. Confirm lifecycle scope and outputs
-- **Developer actions**
-  1. Validate Build scope (parameter load/validate, part/assembly generation).
-  2. Validate Final Output scope (STEP, DXF, BOM, validation report).
-- **Mechanical actions**
-  1. Confirm manufacturing deliverables are sufficient for production handoff.
-- **Output artifact:** `Docs/Workflow/LifecycleBaseline.md` (or equivalent decision record).
-- **Verification:**
-  - Reviewable file in repo with stakeholder sign-off section.
-  - Optional screenshot of approved board/ticket state.
-- **Acceptance metric:** 100% of required outputs explicitly listed and approved by both SW and ME.
+## 1.3 Complexity Weighting
+- **High (H):** Cross-team dependency, high failure impact, or major implementation risk.
+- **Medium (M):** Bounded implementation with moderate dependency.
+- **Low (L):** Documentation/admin process with low technical risk.
 
-### A2. Build mechanical rule matrix (traceable) **(decomposed high-weight step)**
-- **Developer actions**
-  1. Define configuration key schema placeholders for each mechanical rule.
-  2. Define expected feature/mate naming hooks for implementation traceability.
-- **Mechanical actions**
-  1. Specify rules for frame, pivot, height indexing, and plate/brace manufacturability.
-  2. Add measurable values/ranges/tolerances and criticality level.
-- **Output artifact:** `Docs/Mechanical/RequirementTraceMatrix.md` with columns:
-  `Rule ID | Requirement | Config Key | CAD Feature/Mate Name | Validation Report Section | Criticality`.
-- **Verification:**
-  - Markdown table committed and review-approved.
-  - Issue tracker link showing SW+ME review complete.
-- **Acceptance metric:** No empty cells for traceability columns on critical rules.
-
-### A3. Define DoR template
-- **Developer actions**
-  1. Create DoR checklist requiring requirement reference, config keys, expected outputs, and tests.
-- **Mechanical actions**
-  1. Add manufacturability criteria section to DoR checklist.
-- **Output artifact:** `Docs/Workflow/FeatureDoRTemplate.md`.
-- **Verification:**
-  - 2 active feature tickets include populated DoR sections.
-- **Acceptance metric:** All new in-scope features blocked from implementation unless DoR is complete.
-
-**Gate A pass condition:** A1–A3 complete and traceability matrix approved.
+## 1.4 Evidence Registry (single source of truth)
+For each step, record evidence in the project board with:
+- Step ID
+- Artifact path/URL
+- Verification evidence link
+- Acceptance metric result
+- Reviewer(s)
+- Date/time
 
 ---
 
-## Stage B — Architecture and Contracts (Gate B)
+## 2) Dependency-Validated Stage Plan
 
-| ID | Step | Owner(s) | Complexity | Depends On |
+> Sequence rule: **Requirements -> Contracts -> Build -> Final Output -> Validation -> Release**. No downstream stage starts until upstream gate is passed.
+
+## Stage 0 — Project Initialization (Gate 0)
+
+| ID | Step | Owner | Complexity | Dependencies |
 |---|---|---|---|---|
-| B1 | Validate layer ownership map | SW | M | A3 |
-| B2 | Implement configuration schema + validators | SW | H | A2, B1 |
-| B3 | Freeze deterministic naming standard | SW + ME | M | A2, B2 |
+| S0.1 | Confirm baseline scope and output set | SW+ME | M | None |
+| S0.2 | Create roadmap tracking board and evidence registry | SW | L | S0.1 |
 
-### B1. Validate layer ownership map
-- **Developer actions**
+### S0.1 Confirm baseline scope and output set
+- **Software tasks**
+  1. Confirm Build scope: parameter load/validate, CAD generation.
+  2. Confirm Final Output scope: STEP, DXF, BOM, validation report.
+- **Mechanical tasks**
+  1. Confirm outputs satisfy manufacturing handoff requirements.
+- **Deliverable:** approved scope baseline note (project board entry or markdown decision record).
+- **Verification method:**
+  - Screenshot of approved ticket/decision log.
+  - Link to source documents used for confirmation.
+- **Acceptance metric:** 100% of required outputs acknowledged by SW and ME leads.
+
+### S0.2 Create roadmap tracking board and evidence registry
+- **Software tasks**
+  1. Create board columns: Not Started / In Progress / Blocked / In Review / Done.
+  2. Add mandatory evidence fields defined in §1.4.
+- **Mechanical tasks**
+  1. Validate manufacturability review fields exist in the board template.
+- **Deliverable:** operational tracking board.
+- **Verification method:** board URL + screenshot showing required fields.
+- **Acceptance metric:** all roadmap steps preloaded with IDs and dependency links.
+
+**Gate 0 pass condition:** S0.1 and S0.2 complete with visible board and evidence schema.
+
+---
+
+## Stage 1 — Requirements and Traceability (Gate 1)
+
+| ID | Step | Owner | Complexity | Dependencies |
+|---|---|---|---|---|
+| S1.1 | Build requirement traceability matrix | ME (lead), SW (support) | H | Gate 0 |
+| S1.2 | Define Definition of Ready (DoR) template | SW+ME | M | S1.1 |
+| S1.3 | Classify critical rules and risk priorities | SW+ME | M | S1.1 |
+
+### S1.1 Build requirement traceability matrix **(High, decomposed)**
+- **Software tasks**
+  1. Create config-key placeholders for each rule.
+  2. Define expected feature/mate naming hooks for traceability.
+- **Mechanical tasks**
+  1. Define rules for frame, pivot, height indexing, and plate/brace geometry.
+  2. Add measurable ranges, limits, and tolerances.
+- **Deliverable:** `Docs/Mechanical/RequirementTraceMatrix.md`.
+- **Verification method:**
+  - PR diff link showing complete matrix table.
+  - Reviewer sign-off from SW and ME.
+- **Acceptance metric:** 0 empty traceability cells for critical rules.
+
+### S1.2 Define Definition of Ready (DoR) template
+- **Software tasks**
+  1. Add mandatory DoR fields: requirement references, config keys, expected outputs, planned tests.
+- **Mechanical tasks**
+  1. Add manufacturability readiness checks.
+- **Deliverable:** `Docs/Workflow/FeatureDoRTemplate.md`.
+- **Verification method:** 2 sampled feature tickets show completed DoR template.
+- **Acceptance metric:** no implementation ticket may enter In Progress without DoR.
+
+### S1.3 Classify critical rules and risk priorities
+- **Software tasks**
+  1. Tag rules that require strict validator enforcement.
+- **Mechanical tasks**
+  1. Assign criticality (Safety/Function/Manufacturing).
+- **Deliverable:** critical-rule index attached to traceability matrix.
+- **Verification method:** traceability matrix view filtered by criticality tag.
+- **Acceptance metric:** all critical rules mapped to at least one verification test/report check.
+
+**Gate 1 pass condition:** requirements traceability and DoR process are complete and approved.
+
+---
+
+## Stage 2 — Architecture and Contract Readiness (Gate 2)
+
+| ID | Step | Owner | Complexity | Dependencies |
+|---|---|---|---|---|
+| S2.1 | Validate architecture ownership map | SW | M | Gate 1 |
+| S2.2 | Implement configuration schema + validators | SW (lead), ME (review) | H | S2.1 |
+| S2.3 | Standardize deterministic naming rules | SW+ME | M | S2.2 |
+
+### S2.1 Validate architecture ownership map
+- **Software tasks**
   1. Map components to Host/Core/Modules/Shared/Tests.
-  2. Assign owner per module.
-- **Mechanical actions**
-  1. Confirm module boundaries preserve mechanical intent separation.
-- **Output artifact:** `Docs/Software/LayerOwnership.md`.
-- **Verification:** Repo file + codeowner/team mapping reference.
-- **Acceptance metric:** Every module has one accountable owner.
+  2. Assign accountable owner for each module.
+- **Mechanical tasks**
+  1. Validate domain boundaries preserve mechanical intent.
+- **Deliverable:** architecture ownership note (doc or board reference).
+- **Verification method:** ownership table screenshot + review link.
+- **Acceptance metric:** 100% modules have a named owner.
 
-### B2. Implement configuration schema + validators **(decomposed high-weight step)**
-- **Developer actions**
-  1. Create/extend configuration keys from trace matrix.
-  2. Define type/range/default/required rules.
-  3. Implement validator logic and deterministic error messages.
-  4. Add unit tests for valid and invalid combinations.
-- **Mechanical actions**
-  1. Review limits/tolerances encoded in validators.
-- **Output artifact:** updated config + validator tests under `API/`.
-- **Verification:**
-  - CI unit test output (URL + run ID).
-  - Test logs showing boundary failures and valid passes.
-- **Acceptance metric:** 100% validator tests pass; all critical mechanical limits have tests.
+### S2.2 Implement configuration schema + validators **(High, decomposed)**
+- **Software tasks**
+  1. Implement key definitions (type/default/range/required).
+  2. Implement validators and deterministic error messages.
+  3. Add unit tests for valid, invalid, and boundary configurations.
+- **Mechanical tasks**
+  1. Review encoded tolerance/range limits against matrix.
+- **Deliverable:** updated config contracts and validator test coverage.
+- **Verification method:**
+  - CI unit-test URL.
+  - Test output screenshot/log showing boundary pass/fail behavior.
+- **Acceptance metric:**
+  - Unit test pass rate = 100% for validator suite.
+  - 100% critical rules have at least one validator test.
 
-### B3. Freeze deterministic naming standard
-- **Developer actions**
-  1. Implement naming grammar for features/mates/references.
-- **Mechanical actions**
-  1. Confirm naming maps to mechanical rule IDs.
-- **Output artifact:** naming section in software docs + sample mapping table.
-- **Verification:**
-  - Diff review demonstrates naming convention use.
-  - Spot-check generated model tree names in SolidWorks.
-- **Acceptance metric:** Repeated runs produce identical names for same input.
+### S2.3 Standardize deterministic naming rules
+- **Software tasks**
+  1. Define naming grammar for features/mates/references.
+  2. Apply rules to generation modules.
+- **Mechanical tasks**
+  1. Confirm names map back to rule IDs.
+- **Deliverable:** naming standard section in docs and sample mapping table.
+- **Verification method:**
+  - Diff review of naming implementation.
+  - Model-tree screenshot from repeated runs.
+- **Acceptance metric:** identical inputs produce identical names across 2 repeated runs.
 
-**Gate B pass condition:** configuration contracts, validators, and naming are test-backed and approved.
+**Gate 2 pass condition:** contracts, validators, and deterministic naming are approved and test-evidenced.
 
 ---
 
-## Stage C — Build Flow Implementation (Gate C)
+## Stage 3 — Build Workflow Delivery (Gate 3)
 
-| ID | Step | Owner(s) | Complexity | Depends On |
+| ID | Step | Owner | Complexity | Dependencies |
 |---|---|---|---|---|
-| C1 | Wire Build command lifecycle and logging | SW | H | B2, B3 |
-| C2 | Implement Frame/Pivot/Height modules | SW (lead), ME (review) | H | C1 |
-| C3 | Run multi-configuration build validation | SW + ME | M | C2 |
+| S3.1 | Implement Build command lifecycle and instrumentation | SW | H | Gate 2 |
+| S3.2 | Deliver Frame module behavior | SW (lead), ME (review) | H | S3.1 |
+| S3.3 | Deliver Pivot module behavior | SW (lead), ME (review) | H | S3.2 |
+| S3.4 | Deliver Height-adjust module behavior | SW (lead), ME (review) | H | S3.3 |
+| S3.5 | Run multi-configuration Build validation | SW+ME | M | S3.2, S3.3, S3.4 |
 
-### C1. Wire Build command lifecycle and logging **(decomposed high-weight step)**
-- **Developer actions**
-  1. Verify command registration and event wiring.
+### S3.1 Implement Build command lifecycle and instrumentation **(High, decomposed)**
+- **Software tasks**
+  1. Verify command registration/event wiring.
   2. Add run metadata (`run-id`, timestamp, config hash).
-  3. Emit stage logs: load → validate → parts → assembly → summary.
-- **Mechanical actions**
-  1. Confirm logs include mechanical checkpoints required for review.
-- **Output artifact:** executable Build path with run-structured logs.
-- **Verification:**
-  - Build run log file path and excerpt.
-  - Screenshot of run summary in add-in UI (if available).
-- **Acceptance metric:** 3 consecutive runs complete without unhandled exceptions.
+  3. Emit stage logs: load -> validate -> generate parts -> generate assembly -> summary.
+- **Mechanical tasks**
+  1. Confirm logs include checkpoints needed for ME review.
+- **Deliverable:** executable Build flow with structured run logs.
+- **Verification method:**
+  - log file path and excerpt.
+  - screenshot of Build completion summary.
+- **Acceptance metric:** 3 consecutive Build runs complete without unhandled exceptions.
 
-### C2. Implement Frame/Pivot/Height modules **(decomposed high-weight step)**
-- **Developer actions**
-  1. Implement frame geometry from matrix rules.
-  2. Implement pivot subsystem geometry/mates.
-  3. Implement height-indexed configurations.
-- **Mechanical actions**
-  1. Review generated baseline dimensions and fit.
-  2. Record approved dimension checks.
-- **Output artifact:** generated parts + assemblies in baseline configurations.
-- **Verification:**
-  - SolidWorks model tree screenshot(s).
-  - Validation checklist with measured values and tolerances.
-- **Acceptance metric:** All critical dimension and mate checks pass for low/mid/high configs.
+### S3.2 Deliver Frame module behavior **(High, decomposed)**
+- **Software tasks**
+  1. Implement frame geometry rules from matrix.
+  2. Add checks for deterministic feature naming.
+- **Mechanical tasks**
+  1. Validate dimensions and manufacturable constraints.
+- **Deliverable:** frame geometry output for baseline configs.
+- **Verification method:** model tree screenshot + dimension checklist.
+- **Acceptance metric:** 100% critical frame dimensions within tolerance.
 
-### C3. Run multi-configuration build validation
-- **Developer actions**
-  1. Execute representative builds (min/mid/max parameter sets).
-- **Mechanical actions**
-  1. Sign off dimensional and kinematic integrity.
-- **Output artifact:** `Docs/Mechanical/BuildValidationRecord.md`.
-- **Verification:** linked logs + checklist + issue tracker references.
-- **Acceptance metric:** No unresolved critical defects.
+### S3.3 Deliver Pivot module behavior **(High, decomposed)**
+- **Software tasks**
+  1. Implement pivot geometry and mate definitions.
+  2. Add checks for mate naming and integrity.
+- **Mechanical tasks**
+  1. Validate motion/fit behavior and hole strategy.
+- **Deliverable:** pivot subsystem outputs and mate integrity results.
+- **Verification method:** motion check screenshot/video + mate integrity log.
+- **Acceptance metric:** no critical mate conflicts in baseline configurations.
 
-**Gate C pass condition:** Build is stable, traceable, and mechanically signed off.
+### S3.4 Deliver Height-adjust module behavior **(High, decomposed)**
+- **Software tasks**
+  1. Implement supported height-index configurations.
+  2. Ensure deterministic state activation across configs.
+- **Mechanical tasks**
+  1. Confirm configured heights align to approved range table.
+- **Deliverable:** generated configurations across min/nominal/max heights.
+- **Verification method:** configuration list screenshot + measured values log.
+- **Acceptance metric:** all required heights generated and validated.
 
----
+### S3.5 Run multi-configuration Build validation
+- **Software tasks**
+  1. Execute Build for min/nominal/max and one stress-case config.
+- **Mechanical tasks**
+  1. Sign off dimensional and mate integrity checklist.
+- **Deliverable:** `Docs/Mechanical/BuildValidationRecord.md`.
+- **Verification method:** linked run logs, checklist, and issue tracker references.
+- **Acceptance metric:** zero unresolved critical defects.
 
-## Stage D — Final Output Pipeline (Gate D)
-
-| ID | Step | Owner(s) | Complexity | Depends On |
-|---|---|---|---|---|
-| D1 | Implement STEP/DXF export pipeline | SW | H | C3 |
-| D2 | Generate BOM + validation report | SW + ME | M | D1 |
-| D3 | Package run outputs + manifest | SW | M | D2 |
-
-### D1. Implement STEP/DXF export pipeline **(decomposed high-weight step)**
-- **Developer actions**
-  1. Export assembly/part STEP outputs.
-  2. Export plate-component DXFs.
-  3. Enforce deterministic naming/pathing in `Output/<run-id>/`.
-  4. Add explicit export failure logs.
-- **Mechanical actions**
-  1. Open random sample files in downstream viewer/CAD tool.
-- **Output artifact:** STEP/DXF deliverables per run.
-- **Verification:**
-  - Folder listing with expected file counts.
-  - Viewer-open evidence screenshot(s).
-- **Acceptance metric:** 100% required files present and readable.
-
-### D2. Generate BOM + validation report
-- **Developer actions**
-  1. Generate BOM with identifiers, quantities, and attributes.
-  2. Generate pass/fail validation report mapped to Rule IDs.
-- **Mechanical actions**
-  1. Verify BOM completeness and rule coverage.
-- **Output artifact:** BOM + validation report in run folder.
-- **Verification:**
-  - Report sections map to matrix Rule IDs.
-  - BOM quantity spot-check against assembly.
-- **Acceptance metric:** No unmapped critical rule; BOM quantity variance = 0 for sampled checks.
-
-### D3. Package run outputs + manifest
-- **Developer actions**
-  1. Generate run manifest with checksums and metadata.
-  2. Surface end-of-run summary.
-- **Mechanical actions**
-  1. Confirm package includes all manufacturing-required files.
-- **Output artifact:** release-ready run package + manifest.
-- **Verification:** manifest-to-files parity check script/log.
-- **Acceptance metric:** Manifest coverage = 100% required artifacts.
-
-**Gate D pass condition:** Final Output package is complete, readable, and traceable.
+**Gate 3 pass condition:** Build flow is stable, instrumented, and ME-approved for baseline and stress-case configurations.
 
 ---
 
-## Stage E — Quality and Release (Gate E)
+## Stage 4 — Final Output Workflow Delivery (Gate 4)
 
-| ID | Step | Owner(s) | Complexity | Depends On |
+| ID | Step | Owner | Complexity | Dependencies |
 |---|---|---|---|---|
-| E1 | Execute unit/integration/regression + CI | SW | H | D3 |
-| E2 | Perform Definition of Done audit | SW + ME | M | E1 |
-| E3 | Promote release + update docs | SW (lead), ME (approval) | M | E2 |
+| S4.1 | Implement STEP export workflow | SW | H | Gate 3 |
+| S4.2 | Implement DXF export workflow | SW | H | S4.1 |
+| S4.3 | Implement BOM generation | SW+ME | M | S4.1, S4.2 |
+| S4.4 | Implement validation report generation | SW+ME | M | S4.3 |
+| S4.5 | Package outputs with manifest and checksums | SW | M | S4.4 |
 
-### E1. Execute unit/integration/regression + CI **(decomposed high-weight step)**
-- **Developer actions**
+### S4.1 Implement STEP export workflow **(High, decomposed)**
+- **Software tasks**
+  1. Export required assemblies/parts to STEP.
+  2. Enforce deterministic filenames and folder structure.
+- **Mechanical tasks**
+  1. Open STEP samples in downstream viewer/CAD.
+- **Deliverable:** STEP files in `Output/<run-id>/`.
+- **Verification method:** folder listing + openability evidence screenshot.
+- **Acceptance metric:** 100% required STEP files generated and readable.
+
+### S4.2 Implement DXF export workflow **(High, decomposed)**
+- **Software tasks**
+  1. Export plate components to DXF.
+  2. Log export failures with actionable error detail.
+- **Mechanical tasks**
+  1. Validate plate profile and hole outputs from DXF samples.
+- **Deliverable:** DXF files in `Output/<run-id>/`.
+- **Verification method:** folder listing + viewer screenshot + export logs.
+- **Acceptance metric:** 100% required DXF files generated and readable.
+
+### S4.3 Implement BOM generation
+- **Software tasks**
+  1. Generate BOM with part IDs, quantities, and key attributes.
+- **Mechanical tasks**
+  1. Spot-check BOM counts against generated assembly.
+- **Deliverable:** BOM artifact in run folder.
+- **Verification method:** BOM screenshot + sampled reconciliation table.
+- **Acceptance metric:** sampled BOM variance = 0.
+
+### S4.4 Implement validation report generation
+- **Software tasks**
+  1. Emit rule-level pass/fail report mapped to matrix Rule IDs.
+- **Mechanical tasks**
+  1. Confirm every critical rule appears in report.
+- **Deliverable:** validation report in run folder.
+- **Verification method:** report excerpt screenshot and rule coverage summary.
+- **Acceptance metric:** no unmapped critical rule IDs.
+
+### S4.5 Package outputs with manifest and checksums
+- **Software tasks**
+  1. Generate manifest including file paths, checksums, run metadata.
+  2. Publish end-of-run summary.
+- **Mechanical tasks**
+  1. Confirm package completeness for manufacturing handoff.
+- **Deliverable:** complete release-ready run package.
+- **Verification method:** manifest-to-folder parity check log.
+- **Acceptance metric:** manifest coverage = 100% required artifacts.
+
+**Gate 4 pass condition:** Final Output artifacts are complete, readable, and traceable.
+
+---
+
+## Stage 5 — Integrated Quality and Release (Gate 5)
+
+| ID | Step | Owner | Complexity | Dependencies |
+|---|---|---|---|---|
+| S5.1 | Execute unit/integration/regression suites | SW | H | Gate 4 |
+| S5.2 | Conduct Definition of Done (DoD) audit | SW+ME | M | S5.1 |
+| S5.3 | Promote release and update documentation | SW (lead), ME (approval) | M | S5.2 |
+
+### S5.1 Execute unit/integration/regression suites **(High, decomposed)**
+- **Software tasks**
   1. Run unit tests for parser/validator/naming/path logic.
-  2. Run integration tests for Build + Final Output flow.
-  3. Run regression tests against previous baselines.
-  4. Publish CI results.
-- **Mechanical actions**
-  1. Review regression differences that affect manufacturability.
-- **Output artifact:** passing test suites + CI run records.
-- **Verification:** CI dashboard URLs + artifact attachments.
-- **Acceptance metric:** all required pipelines green per branch policy.
+  2. Run integration tests for Build and Final Output.
+  3. Run regression tests against baseline runs.
+- **Mechanical tasks**
+  1. Review regressions that impact manufacturability.
+- **Deliverable:** CI run records + test reports.
+- **Verification method:** CI dashboard URL(s), run IDs, and artifact attachments.
+- **Acceptance metric:** all required pipelines green.
 
-### E2. Perform Definition of Done audit
-- **Developer actions**
-  1. Confirm architecture and documentation alignment.
-- **Mechanical actions**
+### S5.2 Conduct Definition of Done (DoD) audit
+- **Software tasks**
+  1. Confirm architecture, tests, and docs are aligned.
+- **Mechanical tasks**
   1. Confirm manufacturing acceptance criteria met.
-- **Output artifact:** signed DoD checklist.
-- **Verification:** checklist attached to release candidate.
-- **Acceptance metric:** 0 mandatory DoD items open.
+- **Deliverable:** signed DoD checklist.
+- **Verification method:** checklist link in release candidate record.
+- **Acceptance metric:** 0 open mandatory DoD items.
 
-### E3. Promote release + update docs
-- **Developer actions**
-  1. Tag revision and promote artifacts.
-  2. Update changelog/references.
-- **Mechanical actions**
-  1. Final approval for manufacturing handoff.
-- **Output artifact:** release bundle with immutable version tag.
-- **Verification:** release URL/path + artifact manifest + commit hash.
-- **Acceptance metric:** release reproducible from recorded run metadata.
+### S5.3 Promote release and update documentation
+- **Software tasks**
+  1. Tag release revision and promote artifact set.
+  2. Update documentation references/changelog.
+- **Mechanical tasks**
+  1. Provide final manufacturing handoff approval.
+- **Deliverable:** versioned release bundle and updated docs.
+- **Verification method:** release path/URL, artifact manifest, commit hash.
+- **Acceptance metric:** release reproducible using recorded run metadata.
 
-**Gate E pass condition:** quality gates passed and release artifacts published.
-
----
-
-## 3) High-Complexity Steps Explicitly Broken Down
-
-The following weighted steps were decomposed for risk control and visibility:
-- A2 (mechanical rule traceability)
-- B2 (configuration contracts + validators)
-- C1 (Build lifecycle wiring + logging)
-- C2 (domain CAD generation)
-- D1 (STEP/DXF export pipeline)
-- E1 (multi-level automated validation)
-
-Each decomposed step includes independent verification evidence and measurable acceptance metrics.
+**Gate 5 pass condition:** release is fully validated, approved, and reproducible.
 
 ---
 
-## 4) Dependency Integrity Check
+## 3) Explicit Decomposition of High-Weight Steps
 
-Execution order is intentionally constrained:
-1. **Requirements before contracts** (A → B)
-2. **Contracts before generation** (B → C)
-3. **Validated generation before exports** (C → D)
-4. **Verified outputs before release** (D → E)
+The following steps carry the highest delivery risk and have been intentionally decomposed:
+- S1.1 Requirements traceability matrix construction.
+- S2.2 Configuration contracts and validator implementation.
+- S3.1 Build lifecycle wiring and instrumentation.
+- S3.2/S3.3/S3.4 Domain module deliveries (Frame/Pivot/Height).
+- S4.1/S4.2 Export pipelines (STEP/DXF).
+- S5.1 End-to-end automated quality verification.
 
-If any gate fails, re-open the owning stage and re-run downstream validation steps.
+Rationale: each has cross-functional dependencies, downstream impact, and high rework cost if executed incorrectly.
 
 ---
 
-## 5) Operational Progress Board (minimum fields)
+## 4) Sequence Integrity Validation
 
-Track each roadmap step with:
-- `Step ID`
-- `Owner`
-- `Status` (Not Started / In Progress / Blocked / Done)
-- `Dependency`
-- `Artifact Path or URL`
-- `Verification Evidence` (log/screenshot/CI URL)
-- `Acceptance Metric Result` (Pass/Fail + value)
-- `Blocker` and `Target Date`
+### Validated dependency order
+1. Requirements are finalized before contracts are implemented.
+2. Contracts are validated before Build logic scales across modules.
+3. Build outputs are validated before manufacturing exports are generated.
+4. Export artifacts are validated before release promotion.
 
-**Enforcement rule:** no step may move to **Done** without evidence and a passing metric.
+### Rework rule
+If any gate fails, reopen the owning stage and rerun all impacted downstream validation steps before advancing.
+
+---
+
+## 5) Progress Verification Checklist (for every step)
+
+A step can be marked **Done** only if all checks are true:
+- [ ] Deliverable artifact is available at documented path/URL.
+- [ ] Verification evidence is attached (screenshot/log/CI URL/dashboard).
+- [ ] Acceptance metric value is recorded and passes threshold.
+- [ ] SW reviewer approval recorded.
+- [ ] ME reviewer approval recorded for mechanical-impacting steps.
+
+This checklist enforces visible, measurable, and auditable progress throughout delivery.

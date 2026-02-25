@@ -2,15 +2,6 @@
 
 AxionFrame is a SolidWorks add-in that helps engineering teams generate a modular, height-adjustable X-frame table from a guided workflow. Users choose project settings, run **Build** to create parametric CAD parts and assemblies, and run **Final Output** to produce manufacturing deliverables such as STEP, DXF, BOM, and validation reports in the `Output/` directory.
 
-## What AxionFrame Delivers for Users
-
-AxionFrame focuses on fast, repeatable, production-ready engineering results:
-
-- Parametric generation of table variants through configurable defaults.
-- Automated CAD build flow for consistent part and assembly creation.
-- Export pipeline for manufacturing and release documentation.
-- Run-based output organization that supports traceability and handoff.
-
 ## Documentation Overview (`Docs/`)
 
 The `Docs/` folder provides a complete project guide from product workflow to engineering governance.
@@ -57,21 +48,22 @@ The `Docs/` folder provides a complete project guide from product workflow to en
 - Aligns documentation with product behavior and output expectations.
 - Defines the documentation update workflow.
 
-## Developer Setup (Dev Mode)
+## Developer Setup
 
 Contributors can run AxionFrame in a local SolidWorks development workflow.
 
 ### Prerequisites
 
 - Windows environment with .NET Framework 4.8 toolchain.
-- SolidWorks 2024 installed.
+- SolidWorks 2026 installed.
+- SolidWorks API installed.
 - SolidWorks interop assemblies available in the SolidWorks installation path.
 - Visual Studio with C# and MSBuild support.
 
 ### Get the Project
 
 ```bash
-git clone <your-fork-or-repo-url>
+git clone <axion-frame-repo>
 cd AxionFrame
 ```
 
@@ -89,27 +81,3 @@ cd AxionFrame
 3. Execute **Build** to generate CAD parts and assemblies.
 4. Execute **Final Output** to generate STEP, DXF, BOM, and reports.
 5. Review outputs in the run folder under `Output/`.
-
-### Collaboration Workflow
-
-- Use `Docs/Workflow/ProjectLifecycle.md` as the lifecycle reference.
-- Use `Docs/Software/Architecture.md` and `Docs/Software/DevelopmentGuide.md` for implementation alignment.
-- Keep documentation updates synchronized with feature and workflow updates.
-
-## Project Structure
-
-```text
-API/
-  Addin/
-Config/
-Docs/
-  Governance/
-  Mechanical/
-  Software/
-  Workflow/
-README.md
-```
-
-## License
-
-License details can be added in a future repository update based on your organization’s release policy.

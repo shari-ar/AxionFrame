@@ -1,7 +1,6 @@
 # Project Lifecycle Workflow
 
-- **Version:** 1.1
-- **Last Updated:** 2026-02-24
+- **Version:** 1
 
 ## Lifecycle
 
@@ -16,7 +15,7 @@
 ## Runtime User Flow in SolidWorks
 
 1. User opens the AxionFrame Add-in inside SolidWorks.
-2. User updates default settings in the Add-in interface.
+2. User can change default settings in the Add-in interface.
 3. User clicks **Build**.
 4. Add-in generates CAD parts and assemblies.
 5. User reviews generated CAD in SolidWorks.

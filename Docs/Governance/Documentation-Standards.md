@@ -1,7 +1,6 @@
 # Documentation Standards
 
-- **Version:** 1.1
-- **Last Updated:** 2026-02-24
+- **Version:** 1
 
 ## Naming Standard
 
@@ -15,7 +14,6 @@ Each document includes:
 
 - Title
 - Version
-- Last Updated date
 - Scope
 
 ## Content Quality Standard
@@ -32,7 +30,7 @@ Each document provides:
 Workflow and architecture documents align with this product behavior:
 
 - AxionFrame runs as a SolidWorks Add-in.
-- User updates default settings.
+- User can change default settings.
 - User clicks **Build** for CAD generation.
 - User clicks **Final Output** for STEP, DXF, BOM, and report generation.
 

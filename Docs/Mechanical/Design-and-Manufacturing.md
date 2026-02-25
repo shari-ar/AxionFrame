@@ -1,7 +1,6 @@
 # Mechanical Design and Manufacturing Guide
 
-- **Version:** 1.1
-- **Last Updated:** 2026-02-24
+- **Version:** 1
 
 ## Design Intent
 
@@ -16,7 +15,7 @@ The mechanical system delivers a modular X-frame table with height-adjustable co
 
 ## Relationship to Add-in User Flow
 
-- User updates default settings in SolidWorks Add-in.
+- User can change default settings in SolidWorks Add-in.
 - User clicks **Build** to generate CAD parts and assemblies.
 - User clicks **Final Output** to generate manufacturing deliverables.
 

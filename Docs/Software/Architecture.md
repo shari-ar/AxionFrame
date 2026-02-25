@@ -1,7 +1,6 @@
 # Software Architecture
 
-- **Version:** 1.1
-- **Last Updated:** 2026-02-24
+- **Version:** 1
 
 ## Scope
 

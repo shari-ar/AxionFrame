@@ -1,7 +1,7 @@
 # AxionFrame Documentation Hub
 
 - **Title:** AxionFrame Documentation Hub
-- **Version:** 2
+- **Version:** 1
 - **Scope:** This document defines the documentation structure, reading sequence, and product outcome alignment for AxionFrame.
 
 ## Product Outcome

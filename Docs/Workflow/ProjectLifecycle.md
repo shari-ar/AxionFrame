@@ -1,7 +1,7 @@
 # Project Lifecycle Workflow
 
 - **Title:** Project Lifecycle Workflow
-- **Version:** 2
+- **Version:** 1
 - **Scope:** This document defines lifecycle phases, runtime flow, build scope, final output scope, and release flow.
 
 ## Lifecycle

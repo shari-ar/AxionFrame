@@ -1,7 +1,7 @@
 # Mechanical Design and Manufacturing Guide
 
 - **Title:** Mechanical Design and Manufacturing Guide
-- **Version:** 2
+- **Version:** 1
 - **Scope:** This document defines mechanical design intent, manufacturing outputs, and traceability points for AxionFrame.
 
 ## Design Intent

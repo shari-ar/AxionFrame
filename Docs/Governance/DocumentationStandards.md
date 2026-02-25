@@ -1,7 +1,7 @@
 # Documentation Standards
 
 - **Title:** Documentation Standards
-- **Version:** 2
+- **Version:** 1
 - **Scope:** This document defines naming, header, and quality standards for all documentation in `Docs/`.
 
 ## Naming Standard

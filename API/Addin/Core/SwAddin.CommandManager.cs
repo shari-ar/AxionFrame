@@ -1,0 +1,310 @@
+using SolidWorksTools.File;
+using SolidWorks.Interop.sldworks;
+using SolidWorks.Interop.swconst;
+using System;
+using System.Collections.Generic;
+using System.Diagnostics;
+using System.Reflection;
+
+namespace AxionFrame
+{
+    public partial class SwAddin
+    {
+        #region UI Methods
+        public void AddCommandMgr()
+        {
+            ICommandGroup cmdGroup;
+            if (iBmp == null)
+                iBmp = new BitmapHandler();
+            Assembly thisAssembly;
+            int cmdIndex0, cmdIndex1;
+            string Title = "C# Addin", ToolTip = "C# Addin";
+
+
+            int[] docTypes = new int[]{(int)swDocumentTypes_e.swDocASSEMBLY,
+                                       (int)swDocumentTypes_e.swDocDRAWING,
+                                       (int)swDocumentTypes_e.swDocPART};
+
+            thisAssembly = System.Reflection.Assembly.GetAssembly(this.GetType());
+
+
+            int cmdGroupErr = 0;
+            bool ignorePrevious = false;
+
+            object registryIDs;
+            //get the ID information stored in the registry
+            bool getDataResult = iCmdMgr.GetGroupDataFromRegistry(mainCmdGroupID, out registryIDs);
+
+            int[] knownIDs = new int[2] { mainItemID1, mainItemID2 };
+
+            if (getDataResult)
+            {
+                if (!CompareIDs((int[])registryIDs, knownIDs)) //if the IDs don't match, reset the commandGroup
+                {
+                    ignorePrevious = true;
+                }
+            }
+
+            cmdGroup = iCmdMgr.CreateCommandGroup2(mainCmdGroupID, Title, ToolTip, "", -1, ignorePrevious, ref cmdGroupErr);
+
+            // Add bitmaps to your project and set them as embedded resources or provide a direct path to the bitmaps.
+            icons[0] = iBmp.CreateFileFromResourceBitmap("AxionFrame.toolbar20x.png", thisAssembly);
+            icons[1] = iBmp.CreateFileFromResourceBitmap("AxionFrame.toolbar32x.png", thisAssembly);
+            icons[2] = iBmp.CreateFileFromResourceBitmap("AxionFrame.toolbar40x.png", thisAssembly);
+            icons[3] = iBmp.CreateFileFromResourceBitmap("AxionFrame.toolbar64x.png", thisAssembly);
+            icons[4] = iBmp.CreateFileFromResourceBitmap("AxionFrame.toolbar96x.png", thisAssembly);
+            icons[5] = iBmp.CreateFileFromResourceBitmap("AxionFrame.toolbar128x.png", thisAssembly);
+
+            mainIcons[0] = iBmp.CreateFileFromResourceBitmap("AxionFrame.mainicon_20.png", thisAssembly);
+            mainIcons[1] = iBmp.CreateFileFromResourceBitmap("AxionFrame.mainicon_32.png", thisAssembly);
+            mainIcons[2] = iBmp.CreateFileFromResourceBitmap("AxionFrame.mainicon_40.png", thisAssembly);
+            mainIcons[3] = iBmp.CreateFileFromResourceBitmap("AxionFrame.mainicon_64.png", thisAssembly);
+            mainIcons[4] = iBmp.CreateFileFromResourceBitmap("AxionFrame.mainicon_96.png", thisAssembly);
+            mainIcons[5] = iBmp.CreateFileFromResourceBitmap("AxionFrame.mainicon_128.png", thisAssembly);
+
+            cmdGroup.MainIconList = mainIcons;
+            cmdGroup.IconList = icons;
+
+            int menuToolbarOption = (int)(swCommandItemType_e.swMenuItem | swCommandItemType_e.swToolbarItem);
+            cmdIndex0 = cmdGroup.AddCommandItem2("CreateCube", -1, "Create a cube", "Create cube", 0, "CreateCube", "", mainItemID1, menuToolbarOption);
+            cmdIndex1 = cmdGroup.AddCommandItem2("Show PMP", -1, "Display sample property manager", "Show PMP", 2, "ShowPMP", "EnablePMP", mainItemID2, menuToolbarOption);
+
+            cmdGroup.HasToolbar = true;
+            cmdGroup.HasMenu = true;
+            cmdGroup.Activate();
+
+            bool bResult;
+
+            FlyoutGroup flyGroup = iCmdMgr.CreateFlyoutGroup2(flyoutGroupID, "Dynamic Flyout", "Flyout Tooltip", "Flyout Hint",
+              cmdGroup.MainIconList, cmdGroup.IconList, "FlyoutCallback", "FlyoutEnable");
+
+            flyGroup.AddCommandItem("FlyoutCommand 1", "test", 0, "FlyoutCommandItem1", "FlyoutEnableCommandItem1");
+
+            flyGroup.FlyoutType = (int)swCommandFlyoutStyle_e.swCommandFlyoutStyle_Simple;
+
+            foreach (int type in docTypes)
+            {
+                CommandTab cmdTab;
+
+                cmdTab = iCmdMgr.GetCommandTab(type, Title);
+
+                if (cmdTab != null & !getDataResult | ignorePrevious)//if tab exists, but we have ignored the registry info (or changed command group ID), re-create the tab.  Otherwise the ids won't matchup and the tab will be blank
+                {
+                    bool res = iCmdMgr.RemoveCommandTab(cmdTab);
+                    cmdTab = null;
+                }
+
+                //if cmdTab is null, must be first load (possibly after reset), add the commands to the tabs
+                if (cmdTab == null)
+                {
+                    cmdTab = iCmdMgr.AddCommandTab(type, Title);
+
+                    CommandTabBox cmdBox = cmdTab.AddCommandTabBox();
+
+                    int[] cmdIDs = new int[3];
+                    int[] TextType = new int[3];
+
+                    cmdIDs[0] = cmdGroup.get_CommandID(cmdIndex0);
+
+                    TextType[0] = (int)swCommandTabButtonTextDisplay_e.swCommandTabButton_TextHorizontal;
+
+                    cmdIDs[1] = cmdGroup.get_CommandID(cmdIndex1);
+
+                    TextType[1] = (int)swCommandTabButtonTextDisplay_e.swCommandTabButton_TextHorizontal;
+
+                    cmdIDs[2] = cmdGroup.ToolbarId;
+
+                    TextType[2] = (int)swCommandTabButtonTextDisplay_e.swCommandTabButton_TextHorizontal | (int)swCommandTabButtonFlyoutStyle_e.swCommandTabButton_ActionFlyout;
+
+                    bResult = cmdBox.AddCommands(cmdIDs, TextType);
+
+                    CommandTabBox cmdBox1 = cmdTab.AddCommandTabBox();
+                    cmdIDs = new int[1];
+                    TextType = new int[1];
+
+                    cmdIDs[0] = flyGroup.CmdID;
+                    TextType[0] = (int)swCommandTabButtonTextDisplay_e.swCommandTabButton_TextBelow | (int)swCommandTabButtonFlyoutStyle_e.swCommandTabButton_ActionFlyout;
+
+                    bResult = cmdBox1.AddCommands(cmdIDs, TextType);
+
+                    cmdTab.AddSeparator(cmdBox1, cmdIDs[0]);
+                }
+            }
+
+            // Create a third-party icon in the context-sensitive menus of faces in parts
+            // To see this menu, right click on any face in the part
+            Frame swFrame;
+
+            swFrame = iSwApp.Frame();
+            bResult = swFrame.AddMenuPopupIcon3((int)swDocumentTypes_e.swDocPART, (int)swSelectType_e.swSelFACES, "third-party context-sensitive CSharp", addinID,
+                                                "PopupCallbackFunction", "PopupEnable", "", cmdGroup.MainIconList);
+
+            // create and register the shortcut menu
+            registerID = iSwApp.RegisterThirdPartyPopupMenu();
+
+            // add a menu break at the top of the shortcut menu
+            bResult = iSwApp.AddItemToThirdPartyPopupMenu2(registerID, (int)swDocumentTypes_e.swDocPART, "Menu Break", addinID, "", "", "", "", "", (int)swMenuItemType_e.swMenuItemType_Break);
+
+            // add a couple of items to the shortcut menu
+            bResult = iSwApp.AddItemToThirdPartyPopupMenu2(registerID, (int)swDocumentTypes_e.swDocPART, "Test1", addinID, "TestCallback", "EnableTest", "", "Test1", mainIcons[0], (int)swMenuItemType_e.swMenuItemType_Default);
+            bResult = iSwApp.AddItemToThirdPartyPopupMenu2(registerID, (int)swDocumentTypes_e.swDocPART, "Test2", addinID, "TestCallback", "EnableTest", "", "Test2", mainIcons[0], (int)swMenuItemType_e.swMenuItemType_Default);
+
+            // add a separator bar to the shortcut menu
+            bResult = iSwApp.AddItemToThirdPartyPopupMenu2(registerID, (int)swDocumentTypes_e.swDocPART, "separator", addinID, "", "", "", "", "", (int)swMenuItemType_e.swMenuItemType_Separator);
+
+            // add another item to the shortcut menu
+            bResult = iSwApp.AddItemToThirdPartyPopupMenu2(registerID, (int)swDocumentTypes_e.swDocPART, "Test3", addinID, "TestCallback", "EnableTest", "", "Test3", mainIcons[0], (int)swMenuItemType_e.swMenuItemType_Default);
+
+            // add an icon to a menu bar of the shortcut menu
+            bResult = iSwApp.AddItemToThirdPartyPopupMenu2(registerID, (int)swDocumentTypes_e.swDocPART, "", addinID, "TestCallback", "EnableTest", "", "NoOp", mainIcons[0], (int)swMenuItemType_e.swMenuItemType_Default);
+
+            thisAssembly = null;
+        }
+
+        public void RemoveCommandMgr()
+        {
+            iBmp.Dispose();
+
+            iCmdMgr.RemoveCommandGroup(mainCmdGroupID);
+            iCmdMgr.RemoveFlyoutGroup(flyoutGroupID);
+        }
+
+        public bool CompareIDs(int[] storedIDs, int[] addinIDs)
+        {
+            List<int> storedList = new List<int>(storedIDs);
+            List<int> addinList = new List<int>(addinIDs);
+
+            addinList.Sort();
+            storedList.Sort();
+
+            if (addinList.Count != storedList.Count)
+            {
+                return false;
+            }
+            else
+            {
+
+                for (int i = 0; i < addinList.Count; i++)
+                {
+                    if (addinList[i] != storedList[i])
+                    {
+                        return false;
+                    }
+                }
+            }
+            return true;
+        }
+
+        public Boolean AddPMP()
+        {
+            ppage = new UserPMPage(this);
+            return true;
+        }
+
+        public Boolean RemovePMP()
+        {
+            ppage = null;
+            return true;
+        }
+
+        #endregion
+
+        #region UI Callbacks
+        public void CreateCube()
+        {
+            //make sure we have a part open
+            string partTemplate = iSwApp.GetUserPreferenceStringValue((int)swUserPreferenceStringValue_e.swDefaultTemplatePart);
+            if ((partTemplate != null) && (partTemplate != ""))
+            {
+                IModelDoc2 modDoc = (IModelDoc2)iSwApp.NewDocument(partTemplate, (int)swDwgPaperSizes_e.swDwgPaperA2size, 0.0, 0.0);
+
+                modDoc.InsertSketch2(true);
+                modDoc.SketchRectangle(0, 0, 0, .1, .1, .1, false);
+                //Extrude the sketch
+                IFeatureManager featMan = modDoc.FeatureManager;
+                featMan.FeatureExtrusion(true,
+                    false, false,
+                    (int)swEndConditions_e.swEndCondBlind, (int)swEndConditions_e.swEndCondBlind,
+                    0.1, 0.0,
+                    false, false,
+                    false, false,
+                    0.0, 0.0,
+                    false, false,
+                    false, false,
+                    true,
+                    false, false);
+            }
+            else
+            {
+                System.Windows.Forms.MessageBox.Show("There is no part template available. Please check your options and make sure there is a part template selected, or select a new part template.");
+            }
+        }
+
+        public void PopupCallbackFunction()
+        {
+            bool bRet;
+
+            bRet = iSwApp.ShowThirdPartyPopupMenu(registerID, 500, 500);
+        }
+
+        public int PopupEnable()
+        {
+            if (iSwApp.ActiveDoc == null)
+                return 0;
+            else
+                return 1;
+        }
+
+        public void TestCallback()
+        {
+            Debug.Print("Test Callback, CSharp");
+        }
+
+        public int EnableTest()
+        {
+            if (iSwApp.ActiveDoc == null)
+                return 0;
+            else
+                return 1;
+        }
+
+        public void ShowPMP()
+        {
+            if (ppage != null)
+                ppage.Show();
+        }
+
+        public int EnablePMP()
+        {
+            if (iSwApp.ActiveDoc != null)
+                return 1;
+            else
+                return 0;
+        }
+
+        public void FlyoutCallback()
+        {
+            FlyoutGroup flyGroup = iCmdMgr.GetFlyoutGroup(flyoutGroupID);
+            flyGroup.RemoveAllCommandItems();
+
+            flyGroup.AddCommandItem(System.DateTime.Now.ToLongTimeString(), "test", 0, "FlyoutCommandItem1", "FlyoutEnableCommandItem1");
+
+        }
+
+        public int FlyoutEnable()
+        {
+            return 1;
+        }
+
+        public void FlyoutCommandItem1()
+        {
+            iSwApp.SendMsgToUser("Flyout command 1");
+        }
+
+        public int FlyoutEnableCommandItem1()
+        {
+            return 1;
+        }
+        #endregion
+    }
+}

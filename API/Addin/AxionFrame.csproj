@@ -20,7 +20,7 @@
     <DelaySign>false</DelaySign>
     <OutputType>Library</OutputType>
     <RootNamespace>AxionFrame</RootNamespace>
-    <RunPostBuildEvent>OnBuildSuccess</RunPostBuildEvent>
+    <RunPostBuildEvent>Always</RunPostBuildEvent>
     <StartupObject>
     </StartupObject>
     <FileUpgradeFlags>
@@ -225,6 +225,7 @@ IF EXIST "%Windir%\Microsoft.NET\Framework64\%%FMWK%%\regasm.exe" "%Windir%\Micr
 GOTO END
 
 :END
+IF EXIST "$(StartProgram)" start "" "$(StartProgram)"
     
 </PostBuildEvent>
   </PropertyGroup>

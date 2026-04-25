@@ -1,4 +1,5 @@
 ﻿<Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003" ToolsVersion="12.0">
+  <Import Project="AxionFrame.user.props" Condition="Exists('AxionFrame.user.props')" />
   <PropertyGroup>
     <ProjectType>Local</ProjectType>
     <ProductVersion>8.0.50727</ProductVersion>
@@ -26,7 +27,8 @@
     </FileUpgradeFlags>
     <UpgradeBackupLocation>
     </UpgradeBackupLocation>
-    <StartProgram>D:\Program Files\SOLIDWORKS Corp\SOLIDWORKS\\SldWorks.exe</StartProgram>
+    <SolidWorksInstallDir Condition="'$(SolidWorksInstallDir)' == ''">C:\Program Files\SOLIDWORKS Corp\SOLIDWORKS</SolidWorksInstallDir>
+    <StartProgram>$(SolidWorksInstallDir)\SLDWORKS.exe</StartProgram>
     <StartAction>Program</StartAction>
     <TargetFrameworkVersion>v4.8</TargetFrameworkVersion>
     <OldToolsVersion>2.0</OldToolsVersion>
@@ -98,19 +100,19 @@
   <ItemGroup>
     <Reference Include="Microsoft.CSharp" />
     <Reference Include="SolidWorks.Interop.sldworks">
-      <HintPath>D:\Program Files\SOLIDWORKS Corp\SOLIDWORKS\\SolidWorks.Interop.sldworks.dll</HintPath>
+      <HintPath>$(SolidWorksInstallDir)\SolidWorks.Interop.sldworks.dll</HintPath>
       <EmbedInteropTypes>True</EmbedInteropTypes>
     </Reference>
     <Reference Include="SolidWorks.Interop.swconst">
-      <HintPath>D:\Program Files\SOLIDWORKS Corp\SOLIDWORKS\\SolidWorks.Interop.swconst.dll</HintPath>
+      <HintPath>$(SolidWorksInstallDir)\SolidWorks.Interop.swconst.dll</HintPath>
       <EmbedInteropTypes>True</EmbedInteropTypes>
     </Reference>
     <Reference Include="SolidWorks.Interop.swpublished">
-      <HintPath>D:\Program Files\SOLIDWORKS Corp\SOLIDWORKS\\SolidWorks.Interop.swpublished.dll</HintPath>
+      <HintPath>$(SolidWorksInstallDir)\SolidWorks.Interop.swpublished.dll</HintPath>
       <EmbedInteropTypes>True</EmbedInteropTypes>
     </Reference>
     <Reference Include="SolidWorksTools">
-      <HintPath>D:\Program Files\SOLIDWORKS Corp\SOLIDWORKS\\SolidWorksTools.dll</HintPath>
+      <HintPath>$(SolidWorksInstallDir)\SolidWorksTools.dll</HintPath>
     </Reference>
     <Reference Include="System">
       <Name>System</Name>

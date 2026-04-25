@@ -69,6 +69,22 @@ cd AxionFrame
 
 ### Open and Build
 
+Before opening the project, create a local override file for your SolidWorks installation path:
+
+1. Copy `API/Addin/AxionFrame.user.props.example` to `API/Addin/AxionFrame.user.props`.
+2. Update `<SolidWorksInstallDir>` in `API/Addin/AxionFrame.user.props` so it matches your local SolidWorks install folder.
+
+Example:
+
+```xml
+<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="12.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <SolidWorksInstallDir>C:\Program Files\SOLIDWORKS Corp\SOLIDWORKS</SolidWorksInstallDir>
+  </PropertyGroup>
+</Project>
+```
+
 1. Open `API/Addin/AxionFrame.csproj` in Visual Studio.
 2. Select `Debug | AnyCPU` for development.
 3. Build the project to produce the add-in assembly.

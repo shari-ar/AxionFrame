@@ -10,6 +10,7 @@ Output/
 *.rsuser
 *.suo
 *.user
+API/Addin/AxionFrame.user.props
 *.userosscache
 *.sln.docstates
 *.env

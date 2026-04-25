@@ -202,11 +202,11 @@ IF "$(TargetFrameworkVersion)"=="v2.0" GOTO NET20
 GOTO END
 
 :NET40
-set FMWK="v4.0.30319"
+set "FMWK=v4.0.30319"
 GOTO REG
 
 :NET20
-set FMWK="v2.0.50727"
+set "FMWK=v2.0.50727"
 GOTO REG
 
 :REG
@@ -215,11 +215,11 @@ IF "$(PlatformName)" == "x64" GOTO X64
 GOTO END
 
 :ANYCPU
-IF EXIST "%25Windir%25\Microsoft.NET\Framework64\%25FMWK%25\regasm.exe" "%25Windir%25\Microsoft.NET\Framework64\%25FMWK%25\regasm" /codebase "$(TargetPath)"
+IF EXIST "%Windir%\Microsoft.NET\Framework64\%%FMWK%%\regasm.exe" "%Windir%\Microsoft.NET\Framework64\%%FMWK%%\regasm.exe" /codebase "$(TargetPath)"
 GOTO END
 
 :X64
-IF EXIST "%25Windir%25\Microsoft.NET\Framework64\%25FMWK%25\regasm.exe" "%25Windir%25\Microsoft.NET\Framework64\%25FMWK%25\regasm" /codebase "$(TargetPath)"
+IF EXIST "%Windir%\Microsoft.NET\Framework64\%%FMWK%%\regasm.exe" "%Windir%\Microsoft.NET\Framework64\%%FMWK%%\regasm.exe" /codebase "$(TargetPath)"
 GOTO END
 
 :END

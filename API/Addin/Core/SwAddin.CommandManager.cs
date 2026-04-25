@@ -88,7 +88,7 @@ namespace AxionFrame
 
                 cmdTab = iCmdMgr.GetCommandTab(type, Title);
 
-                if (cmdTab != null & !getDataResult | ignorePrevious)//if tab exists, but we have ignored the registry info (or changed command group ID), re-create the tab.  Otherwise the ids won't matchup and the tab will be blank
+                if (cmdTab != null && (!getDataResult || ignorePrevious))//if tab exists, but we have ignored the registry info (or changed command group ID), re-create the tab.  Otherwise the ids won't matchup and the tab will be blank
                 {
                     bool res = iCmdMgr.RemoveCommandTab(cmdTab);
                     cmdTab = null;

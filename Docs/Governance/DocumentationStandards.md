@@ -1,21 +1,17 @@
 # Documentation Standards
 
 - **Title:** Documentation Standards
-- **Version:** 1
 - **Scope:** This document defines naming, header, and quality standards for all documentation in `Docs/`.
 
 ## Naming Standard
 
 - Folder names use PascalCase.
 - Markdown files use descriptive PascalCase names.
-- Versioned documents include a version header.
-
 ## Document Header Standard
 
 Each document includes:
 
 - Title
-- Version
 - Scope
 
 ## Content Quality Standard

@@ -1,7 +1,6 @@
 # AxionFrame Documentation Hub
 
 - **Title:** AxionFrame Documentation Hub
-- **Version:** 1
 - **Scope:** This document defines the documentation structure, reading sequence, and product outcome alignment for AxionFrame.
 
 ## Product Outcome
@@ -22,3 +21,4 @@ AxionFrame delivers a SolidWorks Add-in experience. Users adjust default setting
 3. `Software/DevelopmentGuide.md`
 4. `Mechanical/DesignAndManufacturing.md`
 5. `Governance/DocumentationStandards.md`
+6. `Workflow/S0.1-BaselineScopeDecision.md`

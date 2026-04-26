@@ -1,7 +1,6 @@
 # Software Architecture
 
 - **Title:** Software Architecture
-- **Version:** 1
 - **Scope:** This document defines the software architecture, layers, and design principles for the AxionFrame SolidWorks Add-in.
 
 ## Platform Scope

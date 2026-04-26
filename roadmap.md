@@ -105,7 +105,7 @@ For each step, record evidence in the project board with:
   1. Add mandatory DoR fields: requirement references, config keys, expected outputs, planned tests.
 - **Mechanical tasks**
   1. Add manufacturability readiness checks.
-- **Deliverable:** `Docs/Workflow/FeatureDoRTemplate.md`.
+- **Deliverable:** `Docs/Workflow/S1.2-FeatureDoRTemplate.md`.
 - **Verification method:** 2 sampled feature tickets show completed DoR template.
 - **Acceptance metric:** no implementation ticket may enter In Progress without DoR.
 

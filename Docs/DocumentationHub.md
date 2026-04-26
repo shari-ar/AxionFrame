@@ -22,3 +22,4 @@ AxionFrame delivers a SolidWorks Add-in experience. Users adjust default setting
 4. `Mechanical/DesignAndManufacturing.md`
 5. `Governance/DocumentationStandards.md`
 6. `Workflow/S0.1-BaselineScopeDecision.md`
+7. `Workflow/S0.2-RoadmapTrackingBoard.md`

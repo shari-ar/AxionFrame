@@ -132,15 +132,36 @@
     <Compile Include="AssemblyInfo.cs">
       <SubType>Code</SubType>
     </Compile>
-    <Compile Include="EventHandling.cs" />
-    <Compile Include="PMPHandler.cs" />
+    <Compile Include="..\Core\FeatureManager.cs">
+      <Link>Core\FeatureManager.cs</Link>
+    </Compile>
+    <Compile Include="..\Core\Logger.cs">
+      <Link>Core\Logger.cs</Link>
+    </Compile>
+    <Compile Include="..\Core\MateManager.cs">
+      <Link>Core\MateManager.cs</Link>
+    </Compile>
+    <Compile Include="..\Core\SolidWorksService.cs">
+      <Link>Core\SolidWorksService.cs</Link>
+    </Compile>
+    <Compile Include="..\Modules\FrameModule.cs">
+      <Link>Modules\FrameModule.cs</Link>
+    </Compile>
+    <Compile Include="..\Modules\HeightAdjustModule.cs">
+      <Link>Modules\HeightAdjustModule.cs</Link>
+    </Compile>
+    <Compile Include="..\Modules\PivotModule.cs">
+      <Link>Modules\PivotModule.cs</Link>
+    </Compile>
+    <Compile Include="Events\DocumentEventHandling.cs" />
+    <Compile Include="UI\PMPHandler.cs" />
     <Compile Include="SwAddin.cs">
       <SubType>Code</SubType>
     </Compile>
-    <Compile Include="Core\SwAddin.Registration.cs" />
-    <Compile Include="Core\SwAddin.CommandManager.cs" />
-    <Compile Include="Core\SwAddin.Events.cs" />
-    <Compile Include="UserPMPage.cs" />
+    <Compile Include="Registration\SwAddin.Registration.cs" />
+    <Compile Include="Commands\SwAddin.CommandManager.cs" />
+    <Compile Include="Events\SwAddin.Events.cs" />
+    <Compile Include="UI\UserPMPage.cs" />
     <EmbeddedResource Include="Resources\mainicon_20.png" />
     <EmbeddedResource Include="Resources\mainicon_32.png" />
     <EmbeddedResource Include="Resources\mainicon_40.png" />

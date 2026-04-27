@@ -43,6 +43,9 @@ AxionFrame is a SolidWorks Add-in platform for parametric generation of a modula
    - Unit, integration, and regression suites mapped to architecture layers.
 
 The Stage 2.1 ownership note for this architecture is `Docs/Software/S2.1-ArchitectureOwnershipMap.md`.
+The target configuration contract is `Docs/Software/ConfigurationSchemaSpecification.md`.
+The target validator contract is `Docs/Software/ValidationAndErrorHandlingSpecification.md`.
+The target naming grammar is `Docs/Software/DeterministicNamingStandard.md`.
 
 ## Canonical Domain Model
 

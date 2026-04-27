@@ -26,3 +26,4 @@ AxionFrame delivers a SolidWorks Add-in experience. Users adjust default setting
 8. `Mechanical/S1.1-RequirementTraceMatrix.md`
 9. `Workflow/S1.2-FeatureDoRTemplate.md`
 10. `Mechanical/S1.3-CriticalRuleIndex.md`
+11. `Software/S2.1-ArchitectureOwnershipMap.md`

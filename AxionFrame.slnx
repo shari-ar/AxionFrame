@@ -1,3 +1,4 @@
 <Solution>
   <Project Path="API/Addin/AxionFrame.csproj" />
+  <Project Path="API/Tests/AxionFrame.Tests.csproj" />
 </Solution>

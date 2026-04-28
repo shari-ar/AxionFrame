@@ -667,7 +667,8 @@ namespace AxionFrame
                 case ConfigValueType.ArrayString:
                     {
                         List<string> values = new List<string>();
-                        if (!TryExtractEnumerable(sourceValue, out IList items))
+                        IList items;
+                        if (!TryExtractEnumerable(sourceValue, out items))
                         {
                             conversionError = "Actual value is not an array: " + FormatValue(sourceValue) + ".";
                             return false;
@@ -692,7 +693,8 @@ namespace AxionFrame
                 case ConfigValueType.ArrayDecimal:
                     {
                         List<decimal> values = new List<decimal>();
-                        if (!TryExtractEnumerable(sourceValue, out IList items))
+                        IList items;
+                        if (!TryExtractEnumerable(sourceValue, out items))
                         {
                             conversionError = "Actual value is not an array: " + FormatValue(sourceValue) + ".";
                             return false;

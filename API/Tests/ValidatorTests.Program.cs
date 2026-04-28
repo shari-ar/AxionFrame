@@ -60,7 +60,9 @@ namespace AxionFrame.Tests
 
         private static void CrossFieldValidation_FrameMinGreaterThanMax_ReportsCritical()
         {
-            string json = BaselineJson().Replace("\"memberExtentMin\": 620.0", "\"memberExtentMin\": 990.0");
+            string json = BaselineJson()
+                .Replace("\"memberExtentMin\": 620.0", "\"memberExtentMin\": 970.0")
+                .Replace("\"memberExtentMax\": 980.0", "\"memberExtentMax\": 960.0");
             ConfigurationProcessingResult result = Execute(json);
 
             AssertFalse(result.IsValid, "Frame min/max inversion should fail validation.");

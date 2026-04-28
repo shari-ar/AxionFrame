@@ -1,0 +1,101 @@
+{
+  "frame": {
+    "layout": {
+      "primary": {
+        "memberExtentMin": 620.0,
+        "memberExtentMax": 980.0,
+        "placementTolerance": 0.5
+      }
+    },
+    "profile": {
+      "selection": {
+        "allowedProfiles": [
+          "40x40x2.0_SHS",
+          "60x30x2.0_RHS"
+        ],
+        "dimensionTolerance": 0.2
+      }
+    },
+    "naming": {
+      "ruleSet": "AXF_STANDARD_V1"
+    }
+  },
+  "pivot": {
+    "geometry": {
+      "primary": {
+        "axisLocationMin": 300.0,
+        "axisLocationMax": 450.0,
+        "alignmentTolerance": 0.25
+      }
+    },
+    "hole": {
+      "strategy": {
+        "diameterMin": 10.5,
+        "diameterMax": 11.0,
+        "positionTolerance": 0.2
+      }
+    },
+    "naming": {
+      "mates": "AXF_STANDARD_V1"
+    }
+  },
+  "height": {
+    "supportedConfigurations": {
+      "values": [
+        680.0,
+        730.0,
+        780.0
+      ]
+    },
+    "indexing": {
+      "activation": {
+        "requiredCount": 3,
+        "strictDeterminism": true
+      }
+    },
+    "validation": {
+      "supportedSet": [
+        680.0,
+        730.0,
+        780.0
+      ],
+      "dimensionTolerance": 1.0
+    }
+  },
+  "plateBrace": {
+    "dimensions": {
+      "primary": {
+        "thicknessMin": 5.0,
+        "thicknessMax": 8.0,
+        "dimensionTolerance": 0.2
+      }
+    },
+    "export": {
+      "dxfEligible": true
+    },
+    "naming": {
+      "ruleSet": "AXF_STANDARD_V1"
+    }
+  },
+  "exports": {
+    "step": {
+      "enabled": true
+    },
+    "dxf": {
+      "enabled": true
+    },
+    "bom": {
+      "enabled": true
+    },
+    "validationReport": {
+      "enabled": true
+    }
+  },
+  "validation": {
+    "mode": "StrictRelease",
+    "stopOnCriticalFailure": true
+  },
+  "run": {
+    "packageOutputs": true
+  }
+}

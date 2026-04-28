@@ -124,6 +124,7 @@
       <Name>System.Drawing</Name>
     </Reference>
     <Reference Include="System.Windows.Forms" />
+    <Reference Include="System.Web.Extensions" />
     <Reference Include="System.XML">
       <Name>System.XML</Name>
     </Reference>

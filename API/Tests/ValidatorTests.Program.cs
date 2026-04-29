@@ -28,6 +28,11 @@ namespace AxionFrame.Tests
             Run("NamingRules_RequiredHooks_IncludeDocumentedTraceabilityHooks", NamingRules_RequiredHooks_IncludeDocumentedTraceabilityHooks);
             Run("NamingRules_ModuleSurface_ProducesDocumentedStableHooks", NamingRules_ModuleSurface_ProducesDocumentedStableHooks);
             Run("NamingRules_ModuleSurface_RepeatedOutputsRemainStable", NamingRules_ModuleSurface_RepeatedOutputsRemainStable);
+            Run("BuildLifecycle_Metadata_IsPopulated", BuildLifecycle_Metadata_IsPopulated);
+            Run("BuildLifecycle_ConfigHash_IsStableForIdenticalInputs", BuildLifecycle_ConfigHash_IsStableForIdenticalInputs);
+            Run("BuildLifecycle_StageOrder_IsDeterministic", BuildLifecycle_StageOrder_IsDeterministic);
+            Run("BuildLifecycle_SummaryArtifacts_AreWritten", BuildLifecycle_SummaryArtifacts_AreWritten);
+            Run("BuildLifecycle_Regression_ThreeConsecutiveRuns_NoUnhandledExceptions", BuildLifecycle_Regression_ThreeConsecutiveRuns_NoUnhandledExceptions);
 
             if (_failureCount > 0)
             {
@@ -292,6 +297,100 @@ namespace AxionFrame.Tests
             }
         }
 
+        private static void BuildLifecycle_Metadata_IsPopulated()
+        {
+            string outputRootPath = CreateTempOutputRootPath();
+            try
+            {
+                BuildExecutionResult result = ExecuteBuildWorkflow(BaselineJson(), outputRootPath);
+
+                AssertTrue(result != null, "Build result should not be null.");
+                AssertTrue(!string.IsNullOrWhiteSpace(result.Metadata.RunId), "run-id must be populated.");
+                AssertTrue(result.Metadata.TimestampUtc != default(DateTime), "timestamp must be populated.");
+                AssertTrue(!string.IsNullOrWhiteSpace(result.Metadata.ConfigPath), "config path must be populated.");
+                AssertTrue(!string.IsNullOrWhiteSpace(result.Metadata.ConfigHash), "config hash must be populated.");
+                AssertTrue(result.StageRecords.Count == 5, "Expected five Build stages.");
+            }
+            finally
+            {
+                DeleteDirectoryIfExists(outputRootPath);
+            }
+        }
+
+        private static void BuildLifecycle_ConfigHash_IsStableForIdenticalInputs()
+        {
+            string outputRootPath = CreateTempOutputRootPath();
+            try
+            {
+                BuildExecutionResult firstResult = ExecuteBuildWorkflow(BaselineJson(), outputRootPath);
+                BuildExecutionResult secondResult = ExecuteBuildWorkflow(BaselineJson(), outputRootPath);
+
+                AssertEqual(firstResult.Metadata.ConfigHash, secondResult.Metadata.ConfigHash, "Config hash must remain stable for identical normalized inputs.");
+            }
+            finally
+            {
+                DeleteDirectoryIfExists(outputRootPath);
+            }
+        }
+
+        private static void BuildLifecycle_StageOrder_IsDeterministic()
+        {
+            string outputRootPath = CreateTempOutputRootPath();
+            try
+            {
+                BuildExecutionResult result = ExecuteBuildWorkflow(BaselineJson(), outputRootPath);
+                AssertBuildStageOrder(result.StageRecords);
+            }
+            finally
+            {
+                DeleteDirectoryIfExists(outputRootPath);
+            }
+        }
+
+        private static void BuildLifecycle_SummaryArtifacts_AreWritten()
+        {
+            string outputRootPath = CreateTempOutputRootPath();
+            try
+            {
+                BuildExecutionResult result = ExecuteBuildWorkflow(BaselineJson(), outputRootPath);
+
+                AssertTrue(result.IsSuccessful, "Baseline Build should complete successfully.");
+                AssertTrue(!string.IsNullOrWhiteSpace(result.LogFilePath), "Log file path should be populated.");
+                AssertTrue(!string.IsNullOrWhiteSpace(result.SummaryFilePath), "Summary file path should be populated.");
+                AssertTrue(File.Exists(result.LogFilePath), "Build log should be written to disk.");
+                AssertTrue(File.Exists(result.SummaryFilePath), "Build summary should be written to disk.");
+
+                string logContent = File.ReadAllText(result.LogFilePath);
+                AssertTrue(logContent.IndexOf("run-id=" + result.Metadata.RunId, StringComparison.Ordinal) >= 0, "Build log should contain run-id.");
+                AssertTrue(logContent.IndexOf("1. load", StringComparison.Ordinal) >= 0, "Build log should contain load stage.");
+                AssertTrue(logContent.IndexOf("5. summary", StringComparison.Ordinal) >= 0, "Build log should contain summary stage.");
+            }
+            finally
+            {
+                DeleteDirectoryIfExists(outputRootPath);
+            }
+        }
+
+        private static void BuildLifecycle_Regression_ThreeConsecutiveRuns_NoUnhandledExceptions()
+        {
+            string outputRootPath = CreateTempOutputRootPath();
+            try
+            {
+                for (int i = 0; i < 3; i++)
+                {
+                    BuildExecutionResult result = ExecuteBuildWorkflow(BaselineJson(), outputRootPath);
+                    AssertTrue(result != null, "Build result should not be null in regression run " + i.ToString(CultureInfo.InvariantCulture) + ".");
+                    AssertTrue(!result.HasFailedStages, "Build stages should not fail in regression run " + i.ToString(CultureInfo.InvariantCulture) + ".");
+                    AssertTrue(result.IsSuccessful, "Build should complete successfully in regression run " + i.ToString(CultureInfo.InvariantCulture) + ".");
+                    AssertBuildStageOrder(result.StageRecords);
+                }
+            }
+            finally
+            {
+                DeleteDirectoryIfExists(outputRootPath);
+            }
+        }
+
         private static string[] BuildModuleSurfaceNamingSnapshot(DeterministicNamingService naming)
         {
             FrameModule frameModule = new FrameModule(naming);
@@ -315,6 +414,50 @@ namespace AxionFrame.Tests
             {
                 target.Add(source[i]);
             }
+        }
+
+        private static BuildExecutionResult ExecuteBuildWorkflow(string configJson, string outputRootPath)
+        {
+            string tempFilePath = Path.Combine(Path.GetTempPath(), "axionframe-build-config-" + Guid.NewGuid().ToString("N") + ".json");
+            File.WriteAllText(tempFilePath, configJson);
+
+            try
+            {
+                BuildWorkflowEngine workflowEngine = new BuildWorkflowEngine();
+                return workflowEngine.ExecuteBuild(tempFilePath, outputRootPath);
+            }
+            finally
+            {
+                if (File.Exists(tempFilePath))
+                {
+                    File.Delete(tempFilePath);
+                }
+            }
+        }
+
+        private static string CreateTempOutputRootPath()
+        {
+            string path = Path.Combine(Path.GetTempPath(), "axionframe-build-output-" + Guid.NewGuid().ToString("N"));
+            Directory.CreateDirectory(path);
+            return path;
+        }
+
+        private static void DeleteDirectoryIfExists(string path)
+        {
+            if (!string.IsNullOrWhiteSpace(path) && Directory.Exists(path))
+            {
+                Directory.Delete(path, true);
+            }
+        }
+
+        private static void AssertBuildStageOrder(IList<BuildStageRecord> stages)
+        {
+            AssertEqual(5, stages.Count, "Unexpected Build stage count.");
+            AssertEqual("load", stages[0].StageName, "Unexpected stage at index 0.");
+            AssertEqual("validate", stages[1].StageName, "Unexpected stage at index 1.");
+            AssertEqual("generate parts", stages[2].StageName, "Unexpected stage at index 2.");
+            AssertEqual("generate assembly", stages[3].StageName, "Unexpected stage at index 3.");
+            AssertEqual("summary", stages[4].StageName, "Unexpected stage at index 4.");
         }
 
         private static ConfigurationProcessingResult Execute(string json)

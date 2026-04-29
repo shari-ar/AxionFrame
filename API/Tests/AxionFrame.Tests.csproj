@@ -43,6 +43,12 @@
     <Compile Include="..\Core\FeatureManager.cs">
       <Link>Core\FeatureManager.cs</Link>
     </Compile>
+    <Compile Include="..\Core\Logger.cs">
+      <Link>Core\Logger.cs</Link>
+    </Compile>
+    <Compile Include="..\Core\SolidWorksService.cs">
+      <Link>Core\SolidWorksService.cs</Link>
+    </Compile>
     <Compile Include="..\Modules\FrameModule.cs">
       <Link>Modules\FrameModule.cs</Link>
     </Compile>

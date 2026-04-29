@@ -18,7 +18,7 @@ namespace AxionFrame
                 iBmp = new BitmapHandler();
             Assembly thisAssembly;
             int cmdIndex0, cmdIndex1;
-            string Title = "C# Addin", ToolTip = "C# Addin";
+            string Title = "AxionFrame", ToolTip = "AxionFrame";
 
 
             int[] docTypes = new int[]{(int)swDocumentTypes_e.swDocASSEMBLY,
@@ -66,8 +66,8 @@ namespace AxionFrame
             cmdGroup.IconList = icons;
 
             int menuToolbarOption = (int)(swCommandItemType_e.swMenuItem | swCommandItemType_e.swToolbarItem);
-            cmdIndex0 = cmdGroup.AddCommandItem2("CreateCube", -1, "Create a cube", "Create cube", 0, "CreateCube", "", mainItemID1, menuToolbarOption);
-            cmdIndex1 = cmdGroup.AddCommandItem2("Show PMP", -1, "Display sample property manager", "Show PMP", 2, "ShowPMP", "EnablePMP", mainItemID2, menuToolbarOption);
+            cmdIndex0 = cmdGroup.AddCommandItem2("Build", -1, "Run Build workflow", "Build", 0, "RunBuildCommand", "EnableBuildCommand", mainItemID1, menuToolbarOption);
+            cmdIndex1 = cmdGroup.AddCommandItem2("Show PMP", -1, "Display property manager", "Show PMP", 2, "ShowPMP", "EnablePMP", mainItemID2, menuToolbarOption);
 
             cmdGroup.HasToolbar = true;
             cmdGroup.HasMenu = true;
@@ -210,6 +210,23 @@ namespace AxionFrame
         #endregion
 
         #region UI Callbacks
+        public void RunBuildCommand()
+        {
+            BuildWorkflowEngine workflowEngine = new BuildWorkflowEngine();
+            BuildExecutionResult result = workflowEngine.ExecuteBuild(null, null);
+
+            int icon = result.IsSuccessful ? (int)swMessageBoxIcon_e.swMbInformation : (int)swMessageBoxIcon_e.swMbStop;
+            iSwApp.SendMsgToUser2(result.ToDisplaySummary(), icon, (int)swMessageBoxBtn_e.swMbOk);
+        }
+
+        public int EnableBuildCommand()
+        {
+            if (iSwApp.ActiveDoc != null)
+                return 1;
+            else
+                return 0;
+        }
+
         public void CreateCube()
         {
             //make sure we have a part open

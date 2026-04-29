@@ -9,6 +9,16 @@ namespace AxionFrame
 {
     public sealed class BuildWorkflowEngine
     {
+        private const string DefaultConfigDirectoryName = "Config";
+        private const string DefaultConfigFileName = "GlobalParams.json";
+        private const string DefaultOutputDirectoryName = "Output";
+        private const string SupportedHeightsConfigKey = "height.supportedConfigurations.values";
+        private const string ConfigHashUnavailable = "UNAVAILABLE";
+        private const string NullValueToken = "<null>";
+        private const string RunIdPrefix = "AXF-RUN";
+        private const int RunIdRandomTokenLength = 8;
+        private const int ConfigDiscoveryMaxDepth = 8;
+
         private readonly FeatureManager _featureManager;
         private readonly FrameModule _frameModule;
         private readonly PivotModule _pivotModule;
@@ -34,27 +44,27 @@ namespace AxionFrame
         {
             if (featureManager == null)
             {
-                throw new ArgumentNullException("featureManager");
+                throw new ArgumentNullException(nameof(featureManager));
             }
 
             if (frameModule == null)
             {
-                throw new ArgumentNullException("frameModule");
+                throw new ArgumentNullException(nameof(frameModule));
             }
 
             if (pivotModule == null)
             {
-                throw new ArgumentNullException("pivotModule");
+                throw new ArgumentNullException(nameof(pivotModule));
             }
 
             if (heightAdjustModule == null)
             {
-                throw new ArgumentNullException("heightAdjustModule");
+                throw new ArgumentNullException(nameof(heightAdjustModule));
             }
 
             if (plateBraceModule == null)
             {
-                throw new ArgumentNullException("plateBraceModule");
+                throw new ArgumentNullException(nameof(plateBraceModule));
             }
 
             _featureManager = featureManager;
@@ -66,13 +76,14 @@ namespace AxionFrame
 
         public BuildExecutionResult ExecuteBuild(string configPath, string outputRootPath)
         {
+            // Keep stage execution order fixed for deterministic audit logs and repeatable validation evidence.
             string resolvedConfigPath = ResolveConfigurationPath(configPath);
             string resolvedOutputRoot = ResolveOutputRoot(outputRootPath, resolvedConfigPath);
             DateTime runTimestampUtc = DateTime.UtcNow;
             string runId = CreateRunId(runTimestampUtc);
 
             ConfigurationProcessingResult validationResult = null;
-            string configHash = string.Empty;
+            string configHash = ConfigHashUnavailable;
             List<BuildStageRecord> stages = new List<BuildStageRecord>();
             List<string> partArtifacts = new List<string>();
             List<string> assemblyArtifacts = new List<string>();
@@ -150,8 +161,8 @@ namespace AxionFrame
             BuildStageRecord summaryStage = StartStage(stages, BuildStageKind.Summary);
 
             string plannedRunDirectory = Path.Combine(resolvedOutputRoot, runId);
-            string plannedLogFilePath = Path.Combine(plannedRunDirectory, "build.log");
-            string plannedSummaryFilePath = Path.Combine(plannedRunDirectory, "build.summary.json");
+            string plannedLogFilePath = Path.Combine(plannedRunDirectory, BuildArtifactConstants.BuildLogFileName);
+            string plannedSummaryFilePath = Path.Combine(plannedRunDirectory, BuildArtifactConstants.BuildSummaryFileName);
 
             BuildArtifactWriter artifactWriter = new BuildArtifactWriter(resolvedOutputRoot);
             try
@@ -167,7 +178,7 @@ namespace AxionFrame
                 summaryStage.SetOutcome(
                     DateTime.UtcNow,
                     BuildStageStatus.Failed,
-                    "outputRoot=" + resolvedOutputRoot + "; error=" + ex.Message);
+                    "outputRoot=" + resolvedOutputRoot + "; errorType=" + ex.GetType().Name + "; errorMessage=" + ex.Message);
             }
 
             return result;
@@ -192,7 +203,7 @@ namespace AxionFrame
                 return discoveredPath;
             }
 
-            return Path.GetFullPath(Path.Combine(Environment.CurrentDirectory, "Config", "GlobalParams.json"));
+            return Path.GetFullPath(Path.Combine(Environment.CurrentDirectory, DefaultConfigDirectoryName, DefaultConfigFileName));
         }
 
         public static string ResolveOutputRoot(string outputRootPath, string resolvedConfigPath)
@@ -210,12 +221,12 @@ namespace AxionFrame
                     DirectoryInfo directory = Directory.GetParent(configDirectory);
                     if (directory != null)
                     {
-                        return Path.GetFullPath(Path.Combine(directory.FullName, "Output"));
+                        return Path.GetFullPath(Path.Combine(directory.FullName, DefaultOutputDirectoryName));
                     }
                 }
             }
 
-            return Path.GetFullPath(Path.Combine(Environment.CurrentDirectory, "Output"));
+            return Path.GetFullPath(Path.Combine(Environment.CurrentDirectory, DefaultOutputDirectoryName));
         }
 
         public static string ComputeConfigHash(IDictionary<string, object> normalizedConfig)
@@ -253,7 +264,8 @@ namespace AxionFrame
                     details.Append("; ");
                 }
 
-                details.Append("error=").Append(ex.Message);
+                details.Append("errorType=").Append(ex.GetType().Name);
+                details.Append("; errorMessage=").Append(ex.Message);
                 stage.SetOutcome(DateTime.UtcNow, BuildStageStatus.Failed, details.ToString());
                 return ex;
             }
@@ -289,7 +301,7 @@ namespace AxionFrame
             }
 
             object values;
-            if (!validationResult.NormalizedConfig.TryGetValue("height.supportedConfigurations.values", out values))
+            if (!validationResult.NormalizedConfig.TryGetValue(SupportedHeightsConfigKey, out values))
             {
                 return supportedHeights;
             }
@@ -340,7 +352,7 @@ namespace AxionFrame
         {
             if (value == null)
             {
-                return "<null>";
+                return NullValueToken;
             }
 
             if (value is string)
@@ -387,8 +399,8 @@ namespace AxionFrame
         private static string CreateRunId(DateTime timestampUtc)
         {
             string timestampToken = timestampUtc.ToString("yyyyMMddTHHmmssfff", CultureInfo.InvariantCulture);
-            string randomToken = Guid.NewGuid().ToString("N").Substring(0, 8).ToUpperInvariant();
-            return "AXF-RUN-" + timestampToken + "Z-" + randomToken;
+            string randomToken = Guid.NewGuid().ToString("N").Substring(0, RunIdRandomTokenLength).ToUpperInvariant();
+            return RunIdPrefix + "-" + timestampToken + "Z-" + randomToken;
         }
 
         private static string FindConfigurationPathFromRoot(string rootPath)
@@ -404,9 +416,9 @@ namespace AxionFrame
                 return null;
             }
 
-            for (int i = 0; i < 8 && directory != null; i++)
+            for (int i = 0; i < ConfigDiscoveryMaxDepth && directory != null; i++)
             {
-                string candidatePath = Path.Combine(directory.FullName, "Config", "GlobalParams.json");
+                string candidatePath = Path.Combine(directory.FullName, DefaultConfigDirectoryName, DefaultConfigFileName);
                 if (File.Exists(candidatePath))
                 {
                     return candidatePath;

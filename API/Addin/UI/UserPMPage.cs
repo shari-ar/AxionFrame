@@ -90,8 +90,12 @@ namespace AxionFrame
                 }
                 catch (Exception e)
                 {
-                    iSwApp.SendMsgToUser2(e.Message, 0, 0);
+                    iSwApp.SendMsgToUser2("Failed to initialize PropertyManagerPage controls: " + e.Message, (int)swMessageBoxIcon_e.swMbStop, (int)swMessageBoxBtn_e.swMbOk);
                 }
+            }
+            else
+            {
+                iSwApp.SendMsgToUser2("PropertyManagerPage creation failed. Status code: " + errors.ToString(), (int)swMessageBoxIcon_e.swMbStop, (int)swMessageBoxBtn_e.swMbOk);
             }
         }
 

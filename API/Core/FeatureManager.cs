@@ -169,6 +169,11 @@ namespace AxionFrame
             780.0m
         };
 
+        private static readonly string[] SupportedNamingRuleSets =
+        {
+            DeterministicNamingService.RuleSetStandardV1
+        };
+
         private readonly IList<SchemaFieldDefinition> _schema;
 
         public FeatureManager()
@@ -204,7 +209,7 @@ namespace AxionFrame
 
             schema.Add(ArrayStringField("frame.profile.selection.allowedProfiles", BaselineProfiles, BaselineProfiles, "FRM-002", "VAL-FRM-002-PROFILE", ValidationSeverity.Critical, true));
             schema.Add(DecimalField("frame.profile.selection.dimensionTolerance", 0.2m, 0.0m, 0.2m, "FRM-002", "VAL-FRM-002-PROFILE", ValidationSeverity.Critical, true));
-            schema.Add(EnumField("frame.naming.ruleSet", "AXF_STANDARD_V1", new[] { "AXF_STANDARD_V1" }, "FRM-003", "VAL-FRM-003-NAMING", ValidationSeverity.Warning, false));
+            schema.Add(EnumField("frame.naming.ruleSet", DeterministicNamingService.RuleSetStandardV1, SupportedNamingRuleSets, "FRM-003", "VAL-FRM-003-NAMING", ValidationSeverity.Warning, false));
 
             schema.Add(DecimalField("pivot.geometry.primary.axisLocationMin", 300.0m, 300.0m, 450.0m, "PVT-001", "VAL-PVT-001-GEOMETRY", ValidationSeverity.Critical, true));
             schema.Add(DecimalField("pivot.geometry.primary.axisLocationMax", 450.0m, 300.0m, 450.0m, "PVT-001", "VAL-PVT-001-GEOMETRY", ValidationSeverity.Critical, true));
@@ -213,7 +218,7 @@ namespace AxionFrame
             schema.Add(DecimalField("pivot.hole.strategy.diameterMin", 10.5m, 10.5m, 11.0m, "PVT-002", "VAL-PVT-002-HOLES", ValidationSeverity.Critical, true));
             schema.Add(DecimalField("pivot.hole.strategy.diameterMax", 11.0m, 10.5m, 11.0m, "PVT-002", "VAL-PVT-002-HOLES", ValidationSeverity.Critical, true));
             schema.Add(DecimalField("pivot.hole.strategy.positionTolerance", 0.2m, 0.0m, 0.2m, "PVT-002", "VAL-PVT-002-HOLES", ValidationSeverity.Critical, true));
-            schema.Add(EnumField("pivot.naming.mates", "AXF_STANDARD_V1", new[] { "AXF_STANDARD_V1" }, "PVT-003", "VAL-PVT-003-MATES", ValidationSeverity.Warning, false));
+            schema.Add(EnumField("pivot.naming.mates", DeterministicNamingService.RuleSetStandardV1, SupportedNamingRuleSets, "PVT-003", "VAL-PVT-003-MATES", ValidationSeverity.Warning, false));
 
             schema.Add(ArrayDecimalField("height.supportedConfigurations.values", BaselineHeights, BaselineHeights, "HGT-001", "VAL-HGT-001-SUPPORTED-CONFIGS", ValidationSeverity.Critical, true));
             schema.Add(IntegerField("height.indexing.activation.requiredCount", 3, 3, 3, "HGT-002", "VAL-HGT-002-ACTIVATION", ValidationSeverity.Critical, true));
@@ -225,7 +230,7 @@ namespace AxionFrame
             schema.Add(DecimalField("plateBrace.dimensions.primary.thicknessMax", 8.0m, 5.0m, 8.0m, "PLT-001", "VAL-PLT-001-DIMENSIONS", ValidationSeverity.Critical, true));
             schema.Add(DecimalField("plateBrace.dimensions.primary.dimensionTolerance", 0.2m, 0.0m, 0.2m, "PLT-001", "VAL-PLT-001-DIMENSIONS", ValidationSeverity.Critical, true));
             schema.Add(BooleanField("plateBrace.export.dxfEligible", true, "PLT-002", "VAL-PLT-002-DXF-ELIGIBILITY", ValidationSeverity.Critical, true));
-            schema.Add(EnumField("plateBrace.naming.ruleSet", "AXF_STANDARD_V1", new[] { "AXF_STANDARD_V1" }, "PLT-003", "VAL-PLT-003-NAMING", ValidationSeverity.Warning, false));
+            schema.Add(EnumField("plateBrace.naming.ruleSet", DeterministicNamingService.RuleSetStandardV1, SupportedNamingRuleSets, "PLT-003", "VAL-PLT-003-NAMING", ValidationSeverity.Warning, false));
 
             schema.Add(BooleanField("exports.step.enabled", true, "CFG-EXP-STEP", "VAL-CFG-EXP-STEP", ValidationSeverity.Error, true));
             schema.Add(BooleanField("exports.dxf.enabled", true, "CFG-EXP-DXF", "VAL-CFG-EXP-DXF", ValidationSeverity.Error, true));
@@ -846,6 +851,7 @@ namespace AxionFrame
             IDictionary<string, object> values,
             IList<ValidationMessage> messages)
         {
+            // Cross-field validators enforce invariants that are not expressible with per-key schema checks.
             ValidateMinLessOrEqual(values, messages, "frame.layout.primary.memberExtentMin", "frame.layout.primary.memberExtentMax", "FRM-001", "VAL-FRM-001-LAYOUT", "frame.layout.primary");
             ValidateMinLessOrEqual(values, messages, "pivot.geometry.primary.axisLocationMin", "pivot.geometry.primary.axisLocationMax", "PVT-001", "VAL-PVT-001-GEOMETRY", "pivot.geometry.primary");
             ValidateMinLessOrEqual(values, messages, "pivot.hole.strategy.diameterMin", "pivot.hole.strategy.diameterMax", "PVT-002", "VAL-PVT-002-HOLES", "pivot.hole.strategy");

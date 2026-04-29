@@ -7,6 +7,19 @@ using System.Web.Script.Serialization;
 
 namespace AxionFrame
 {
+    internal static class BuildArtifactConstants
+    {
+        public const string BuildLogFileName = "build.log";
+        public const string BuildSummaryFileName = "build.summary.json";
+        public const string LogHeader = "AXIONFRAME BUILD RUN";
+        public const string KeyRunId = "run-id=";
+        public const string KeyTimestampUtc = "timestamp-utc=";
+        public const string KeyConfigPath = "config-path=";
+        public const string KeyConfigHash = "config-hash=";
+        public const string KeyStatus = "status=";
+        public const string StageSection = "stages:";
+    }
+
     public enum BuildStageKind
     {
         Load = 0,
@@ -178,7 +191,7 @@ namespace AxionFrame
         {
             if (string.IsNullOrWhiteSpace(outputRootPath))
             {
-                throw new ArgumentException("Output root path cannot be null or whitespace.", "outputRootPath");
+                throw new ArgumentException("Output root path cannot be null or whitespace.", nameof(outputRootPath));
             }
 
             _outputRootPath = outputRootPath;
@@ -188,14 +201,20 @@ namespace AxionFrame
         {
             if (result == null)
             {
-                throw new ArgumentNullException("result");
+                throw new ArgumentNullException(nameof(result));
             }
 
+            if (string.IsNullOrWhiteSpace(result.Metadata.RunId))
+            {
+                throw new InvalidOperationException("Build run id must be populated before persisting artifacts.");
+            }
+
+            Directory.CreateDirectory(_outputRootPath);
             string runDirectoryPath = Path.Combine(_outputRootPath, result.Metadata.RunId);
             Directory.CreateDirectory(runDirectoryPath);
 
-            string logFilePath = Path.Combine(runDirectoryPath, "build.log");
-            string summaryFilePath = Path.Combine(runDirectoryPath, "build.summary.json");
+            string logFilePath = Path.Combine(runDirectoryPath, BuildArtifactConstants.BuildLogFileName);
+            string summaryFilePath = Path.Combine(runDirectoryPath, BuildArtifactConstants.BuildSummaryFileName);
 
             File.WriteAllText(logFilePath, BuildLogText(result));
             File.WriteAllText(summaryFilePath, BuildSummaryJson(result));
@@ -205,14 +224,15 @@ namespace AxionFrame
 
         private static string BuildLogText(BuildExecutionResult result)
         {
+            // Keep a flat, machine-parseable log format for deterministic evidence comparisons.
             StringBuilder builder = new StringBuilder();
-            builder.AppendLine("AXIONFRAME BUILD RUN");
-            builder.Append("run-id=").Append(result.Metadata.RunId).AppendLine();
-            builder.Append("timestamp-utc=").Append(FormatUtc(result.Metadata.TimestampUtc)).AppendLine();
-            builder.Append("config-path=").Append(result.Metadata.ConfigPath).AppendLine();
-            builder.Append("config-hash=").Append(result.Metadata.ConfigHash).AppendLine();
-            builder.Append("status=").Append(result.IsSuccessful ? "success" : "failed").AppendLine();
-            builder.AppendLine("stages:");
+            builder.AppendLine(BuildArtifactConstants.LogHeader);
+            builder.Append(BuildArtifactConstants.KeyRunId).Append(result.Metadata.RunId).AppendLine();
+            builder.Append(BuildArtifactConstants.KeyTimestampUtc).Append(FormatUtc(result.Metadata.TimestampUtc)).AppendLine();
+            builder.Append(BuildArtifactConstants.KeyConfigPath).Append(result.Metadata.ConfigPath).AppendLine();
+            builder.Append(BuildArtifactConstants.KeyConfigHash).Append(result.Metadata.ConfigHash).AppendLine();
+            builder.Append(BuildArtifactConstants.KeyStatus).Append(result.IsSuccessful ? "success" : "failed").AppendLine();
+            builder.AppendLine(BuildArtifactConstants.StageSection);
 
             for (int i = 0; i < result.StageRecords.Count; i++)
             {

@@ -99,9 +99,17 @@ namespace AxionFrame
             RemovePMP();
             DetachEventHandlers();
 
-            System.Runtime.InteropServices.Marshal.ReleaseComObject(iCmdMgr);
+            if (iCmdMgr != null)
+            {
+                Marshal.ReleaseComObject(iCmdMgr);
+            }
+
             iCmdMgr = null;
-            System.Runtime.InteropServices.Marshal.ReleaseComObject(iSwApp);
+            if (iSwApp != null)
+            {
+                Marshal.ReleaseComObject(iSwApp);
+            }
+
             iSwApp = null;
             //The addin _must_ call GC.Collect() here in order to retrieve all managed code pointers
             GC.Collect();

@@ -5,6 +5,14 @@ namespace AxionFrame
 {
     public sealed class PlateBraceModule
     {
+        private const string DomainPlateBrace = "PLT";
+        private const string ComponentBrace = "BRACE";
+        private const string DescriptorPrimary = "PRIMARY";
+        private const string RequiredHookDxfTraceability = "PLT-002";
+        private const string ExportTypeDxf = "DXF";
+        private const string ExportDescriptorPlateSet = "PLATE_SET";
+        private const string ValidationDescriptorTraceability = "TRACEABILITY";
+
         private readonly DeterministicNamingService _naming;
 
         public PlateBraceModule()
@@ -16,7 +24,7 @@ namespace AxionFrame
         {
             if (naming == null)
             {
-                throw new ArgumentNullException("naming");
+                throw new ArgumentNullException(nameof(naming));
             }
 
             _naming = naming;
@@ -24,22 +32,22 @@ namespace AxionFrame
 
         public string GetBracePrimaryFeatureName()
         {
-            return _naming.CreateFeatureName("PLT", "BRACE", "PRIMARY");
+            return _naming.CreateFeatureName(DomainPlateBrace, ComponentBrace, DescriptorPrimary);
         }
 
         public string GetDxfTraceabilityFeatureName()
         {
-            return _naming.GetRequiredStableHook("PLT-002");
+            return _naming.GetRequiredStableHook(RequiredHookDxfTraceability);
         }
 
         public string GetDxfExportArtifactName()
         {
-            return _naming.CreateExportArtifactName("DXF", "PLATE_SET");
+            return _naming.CreateExportArtifactName(ExportTypeDxf, ExportDescriptorPlateSet);
         }
 
         public string GetTraceabilityValidationSectionIdentifier()
         {
-            return _naming.CreateValidationSectionIdentifier("PLT", "TRACEABILITY");
+            return _naming.CreateValidationSectionIdentifier(DomainPlateBrace, ValidationDescriptorTraceability);
         }
 
         public IList<string> GetDeterministicIdentifiers()

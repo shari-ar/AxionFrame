@@ -5,6 +5,9 @@ namespace AxionFrame
 {
     public sealed class HeightAdjustModule
     {
+        private const string RequiredHookHeightIndexed = "HGT-002";
+        private const string RequiredHookHeightValidationSet = "HGT-003";
+
         private readonly DeterministicNamingService _naming;
 
         public HeightAdjustModule()
@@ -16,7 +19,7 @@ namespace AxionFrame
         {
             if (naming == null)
             {
-                throw new ArgumentNullException("naming");
+                throw new ArgumentNullException(nameof(naming));
             }
 
             _naming = naming;
@@ -26,7 +29,7 @@ namespace AxionFrame
         {
             if (supportedHeightsMillimeters == null)
             {
-                throw new ArgumentNullException("supportedHeightsMillimeters");
+                throw new ArgumentNullException(nameof(supportedHeightsMillimeters));
             }
 
             List<string> names = new List<string>();
@@ -40,12 +43,12 @@ namespace AxionFrame
 
         public string GetIndexedActivationHook()
         {
-            return _naming.GetRequiredStableHook("HGT-002");
+            return _naming.GetRequiredStableHook(RequiredHookHeightIndexed);
         }
 
         public string GetValidationSetHook()
         {
-            return _naming.GetRequiredStableHook("HGT-003");
+            return _naming.GetRequiredStableHook(RequiredHookHeightValidationSet);
         }
     }
 }

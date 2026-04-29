@@ -163,14 +163,26 @@ namespace AxionFrame
 
         public void RemoveCommandMgr()
         {
-            iBmp.Dispose();
+            if (iBmp != null)
+            {
+                iBmp.Dispose();
+                iBmp = null;
+            }
 
-            iCmdMgr.RemoveCommandGroup(mainCmdGroupID);
-            iCmdMgr.RemoveFlyoutGroup(flyoutGroupID);
+            if (iCmdMgr != null)
+            {
+                iCmdMgr.RemoveCommandGroup(mainCmdGroupID);
+                iCmdMgr.RemoveFlyoutGroup(flyoutGroupID);
+            }
         }
 
         public bool CompareIDs(int[] storedIDs, int[] addinIDs)
         {
+            if (storedIDs == null || addinIDs == null)
+            {
+                return false;
+            }
+
             List<int> storedList = new List<int>(storedIDs);
             List<int> addinList = new List<int>(addinIDs);
 
@@ -212,11 +224,26 @@ namespace AxionFrame
         #region UI Callbacks
         public void RunBuildCommand()
         {
-            BuildWorkflowEngine workflowEngine = new BuildWorkflowEngine();
-            BuildExecutionResult result = workflowEngine.ExecuteBuild(null, null);
+            if (iSwApp == null)
+            {
+                return;
+            }
 
-            int icon = result.IsSuccessful ? (int)swMessageBoxIcon_e.swMbInformation : (int)swMessageBoxIcon_e.swMbStop;
-            iSwApp.SendMsgToUser2(result.ToDisplaySummary(), icon, (int)swMessageBoxBtn_e.swMbOk);
+            try
+            {
+                BuildWorkflowEngine workflowEngine = new BuildWorkflowEngine();
+                BuildExecutionResult result = workflowEngine.ExecuteBuild(null, null);
+
+                int icon = result.IsSuccessful ? (int)swMessageBoxIcon_e.swMbInformation : (int)swMessageBoxIcon_e.swMbStop;
+                iSwApp.SendMsgToUser2(result.ToDisplaySummary(), icon, (int)swMessageBoxBtn_e.swMbOk);
+            }
+            catch (Exception ex)
+            {
+                // Surface failures to the user as a controlled SolidWorks message instead of bubbling exceptions into COM callbacks.
+                string message = "Build workflow failed unexpectedly." + Environment.NewLine +
+                                 ex.GetType().Name + ": " + ex.Message;
+                iSwApp.SendMsgToUser2(message, (int)swMessageBoxIcon_e.swMbStop, (int)swMessageBoxBtn_e.swMbOk);
+            }
         }
 
         public int EnableBuildCommand()

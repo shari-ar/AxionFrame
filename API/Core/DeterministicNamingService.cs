@@ -17,6 +17,12 @@ namespace AxionFrame
     public sealed class DeterministicNamingService
     {
         public const string RuleSetStandardV1 = "AXF_STANDARD_V1";
+        private const string PrefixAxionFrame = "AXF";
+        private const string EntityMate = "MATE";
+        private const string EntityConfiguration = "CFG";
+        private const string EntityExport = "EXP";
+        private const string EntityValidation = "VAL";
+        private const string DomainHeight = "HGT";
 
         private static readonly IDictionary<string, string> DomainTokenByNormalizedDomain = new Dictionary<string, string>(StringComparer.Ordinal)
         {
@@ -60,32 +66,32 @@ namespace AxionFrame
 
         public string CreateFeatureName(string domain, string component, string descriptor)
         {
-            return JoinTokens("AXF", ResolveDomainToken(domain), NormalizeToken(component), NormalizeToken(descriptor));
+            return JoinTokens(PrefixAxionFrame, ResolveDomainToken(domain), NormalizeToken(component), NormalizeToken(descriptor));
         }
 
         public string CreateMateName(string domain, string descriptor)
         {
-            return JoinTokens("AXF", "MATE", ResolveDomainToken(domain), NormalizeToken(descriptor));
+            return JoinTokens(PrefixAxionFrame, EntityMate, ResolveDomainToken(domain), NormalizeToken(descriptor));
         }
 
         public string CreateConfigurationName(string domain, string descriptor)
         {
-            return JoinTokens("AXF", "CFG", ResolveDomainToken(domain), NormalizeToken(descriptor));
+            return JoinTokens(PrefixAxionFrame, EntityConfiguration, ResolveDomainToken(domain), NormalizeToken(descriptor));
         }
 
         public string CreateHeightConfigurationName(decimal heightMillimeters)
         {
-            return CreateConfigurationName("HGT", NormalizeDiscreteNumericToken(heightMillimeters));
+            return CreateConfigurationName(DomainHeight, NormalizeDiscreteNumericToken(heightMillimeters));
         }
 
         public string CreateExportArtifactName(string exportType, string descriptor)
         {
-            return JoinTokens("AXF", "EXP", NormalizeToken(exportType), NormalizeToken(descriptor));
+            return JoinTokens(PrefixAxionFrame, EntityExport, NormalizeToken(exportType), NormalizeToken(descriptor));
         }
 
         public string CreateValidationSectionIdentifier(string domain, string descriptor)
         {
-            return JoinTokens("AXF", "VAL", ResolveDomainToken(domain), NormalizeToken(descriptor));
+            return JoinTokens(PrefixAxionFrame, EntityValidation, ResolveDomainToken(domain), NormalizeToken(descriptor));
         }
 
         public string ResolveDomainToken(string domain)
@@ -94,7 +100,7 @@ namespace AxionFrame
             string token;
             if (!DomainTokenByNormalizedDomain.TryGetValue(normalizedDomain, out token))
             {
-                throw new ArgumentException("Unsupported naming domain: " + normalizedDomain + ".", "domain");
+                throw new ArgumentException("Unsupported naming domain: " + normalizedDomain + ".", nameof(domain));
             }
 
             return token;
@@ -109,13 +115,13 @@ namespace AxionFrame
         {
             if (string.IsNullOrWhiteSpace(ruleId))
             {
-                throw new ArgumentException("Rule id cannot be null or whitespace.", "ruleId");
+                throw new ArgumentException("Rule id cannot be null or whitespace.", nameof(ruleId));
             }
 
             string hook;
             if (!RequiredStableHooks.TryGetValue(ruleId, out hook))
             {
-                throw new ArgumentException("Unsupported required stable-hook rule id: " + ruleId + ".", "ruleId");
+                throw new ArgumentException("Unsupported required stable-hook rule id: " + ruleId + ".", nameof(ruleId));
             }
 
             return hook;
@@ -125,9 +131,10 @@ namespace AxionFrame
         {
             if (string.IsNullOrWhiteSpace(input))
             {
-                throw new ArgumentException("Token value cannot be null or whitespace.", "input");
+                throw new ArgumentException("Token value cannot be null or whitespace.", nameof(input));
             }
 
+            // Normalize any punctuation/spacing into single underscores so tokens stay deterministic.
             StringBuilder builder = new StringBuilder(input.Length);
             bool previousWasUnderscore = false;
             string upperInvariant = input.ToUpperInvariant();
@@ -151,7 +158,7 @@ namespace AxionFrame
             string normalized = TrimUnderscores(builder.ToString());
             if (normalized.Length == 0)
             {
-                throw new ArgumentException("Token does not contain any supported alphanumeric characters.", "input");
+                throw new ArgumentException("Token does not contain any supported alphanumeric characters.", nameof(input));
             }
 
             return normalized;
@@ -195,7 +202,7 @@ namespace AxionFrame
                 }
             }
 
-            if (!string.Equals(parts[0], "AXF", StringComparison.Ordinal))
+            if (!string.Equals(parts[0], PrefixAxionFrame, StringComparison.Ordinal))
             {
                 return false;
             }
@@ -229,7 +236,7 @@ namespace AxionFrame
 
         private static bool ValidateMateName(string[] parts)
         {
-            if (!string.Equals(parts[1], "MATE", StringComparison.Ordinal))
+            if (!string.Equals(parts[1], EntityMate, StringComparison.Ordinal))
             {
                 return false;
             }
@@ -244,7 +251,7 @@ namespace AxionFrame
 
         private static bool ValidateConfigurationName(string[] parts)
         {
-            if (!string.Equals(parts[1], "CFG", StringComparison.Ordinal))
+            if (!string.Equals(parts[1], EntityConfiguration, StringComparison.Ordinal))
             {
                 return false;
             }
@@ -259,7 +266,7 @@ namespace AxionFrame
 
         private static bool ValidateExportName(string[] parts)
         {
-            if (!string.Equals(parts[1], "EXP", StringComparison.Ordinal))
+            if (!string.Equals(parts[1], EntityExport, StringComparison.Ordinal))
             {
                 return false;
             }
@@ -269,7 +276,7 @@ namespace AxionFrame
 
         private static bool ValidateValidationName(string[] parts)
         {
-            if (!string.Equals(parts[1], "VAL", StringComparison.Ordinal))
+            if (!string.Equals(parts[1], EntityValidation, StringComparison.Ordinal))
             {
                 return false;
             }

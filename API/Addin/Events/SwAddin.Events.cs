@@ -9,7 +9,11 @@ namespace AxionFrame
         #region Event Methods
         public bool AttachEventHandlers()
         {
-            AttachSwEvents();
+            if (!AttachSwEvents())
+            {
+                return false;
+            }
+
             //Listen for events on all currently open docs
             AttachEventsToAllDocuments();
             return true;
@@ -17,6 +21,12 @@ namespace AxionFrame
 
         private bool AttachSwEvents()
         {
+            if (SwEventPtr == null)
+            {
+                Console.WriteLine("SolidWorks event pointer is not initialized.");
+                return false;
+            }
+
             try
             {
                 SwEventPtr.ActiveDocChangeNotify += new DSldWorksEvents_ActiveDocChangeNotifyEventHandler(OnDocChange);
@@ -28,13 +38,18 @@ namespace AxionFrame
             }
             catch (Exception e)
             {
-                Console.WriteLine(e.Message);
+                Console.WriteLine("Failed to attach SolidWorks application events: " + e.Message);
                 return false;
             }
         }
 
         private bool DetachSwEvents()
         {
+            if (SwEventPtr == null)
+            {
+                return true;
+            }
+
             try
             {
                 SwEventPtr.ActiveDocChangeNotify -= new DSldWorksEvents_ActiveDocChangeNotifyEventHandler(OnDocChange);
@@ -46,13 +61,18 @@ namespace AxionFrame
             }
             catch (Exception e)
             {
-                Console.WriteLine(e.Message);
+                Console.WriteLine("Failed to detach SolidWorks application events: " + e.Message);
                 return false;
             }
         }
 
         public void AttachEventsToAllDocuments()
         {
+            if (iSwApp == null)
+            {
+                return;
+            }
+
             ModelDoc2 modDoc = (ModelDoc2)iSwApp.GetFirstDocument();
             while (modDoc != null)
             {
@@ -62,11 +82,10 @@ namespace AxionFrame
                 }
                 else if (openDocs.Contains(modDoc))
                 {
-                    bool connected = false;
                     DocumentEventHandler docHandler = (DocumentEventHandler)openDocs[modDoc];
                     if (docHandler != null)
                     {
-                        connected = docHandler.ConnectModelViews();
+                        docHandler.ConnectModelViews();
                     }
                 }
 
@@ -113,17 +132,19 @@ namespace AxionFrame
 
         public bool DetachModelEventHandler(ModelDoc2 modDoc)
         {
-            DocumentEventHandler docHandler;
-            docHandler = (DocumentEventHandler)openDocs[modDoc];
+            if (modDoc == null || !openDocs.Contains(modDoc))
+                return false;
+
             openDocs.Remove(modDoc);
-            modDoc = null;
-            docHandler = null;
             return true;
         }
 
         public bool DetachEventHandlers()
         {
-            DetachSwEvents();
+            if (!DetachSwEvents())
+            {
+                return false;
+            }
 
             //Close events on all currently open docs
             DocumentEventHandler docHandler;
@@ -135,8 +156,10 @@ namespace AxionFrame
             foreach (ModelDoc2 key in keys)
             {
                 docHandler = (DocumentEventHandler)openDocs[key];
-                docHandler.DetachEventHandlers(); //This also removes the pair from the hash
-                docHandler = null;
+                if (docHandler != null)
+                {
+                    docHandler.DetachEventHandlers(); //This also removes the pair from the hash
+                }
             }
             return true;
         }

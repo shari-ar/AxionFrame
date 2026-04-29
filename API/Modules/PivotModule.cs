@@ -5,6 +5,12 @@ namespace AxionFrame
 {
     public sealed class PivotModule
     {
+        private const string DomainPivot = "PVT";
+        private const string ComponentJoint = "JOINT";
+        private const string ComponentHole = "HOLE";
+        private const string DescriptorPattern = "PATTERN";
+        private const string DescriptorPrimary = "PRIMARY";
+
         private readonly DeterministicNamingService _naming;
 
         public PivotModule()
@@ -16,7 +22,7 @@ namespace AxionFrame
         {
             if (naming == null)
             {
-                throw new ArgumentNullException("naming");
+                throw new ArgumentNullException(nameof(naming));
             }
 
             _naming = naming;
@@ -24,17 +30,17 @@ namespace AxionFrame
 
         public string GetJointPrimaryFeatureName()
         {
-            return _naming.CreateFeatureName("PVT", "JOINT", "PRIMARY");
+            return _naming.CreateFeatureName(DomainPivot, ComponentJoint, DescriptorPrimary);
         }
 
         public string GetHolePatternFeatureName()
         {
-            return _naming.CreateFeatureName("PVT", "HOLE", "PATTERN");
+            return _naming.CreateFeatureName(DomainPivot, ComponentHole, DescriptorPattern);
         }
 
         public string GetPrimaryMateName()
         {
-            return _naming.CreateMateName("PVT", "PRIMARY");
+            return _naming.CreateMateName(DomainPivot, DescriptorPrimary);
         }
 
         public IList<string> GetDeterministicIdentifiers()

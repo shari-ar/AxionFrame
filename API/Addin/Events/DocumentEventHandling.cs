@@ -15,6 +15,16 @@ namespace AxionFrame
 
         public DocumentEventHandler(ModelDoc2 modDoc, SwAddin addin)
         {
+            if (modDoc == null)
+            {
+                throw new ArgumentNullException(nameof(modDoc));
+            }
+
+            if (addin == null)
+            {
+                throw new ArgumentNullException(nameof(addin));
+            }
+
             document = modDoc;
             userAddin = addin;
             iSwApp = (ISldWorks)userAddin.SwApp;
@@ -78,14 +88,12 @@ namespace AxionFrame
 
         public bool DetachModelViewEventHandler(ModelView mView)
         {
-            DocView dView;
-            if (openModelViews.Contains(mView))
+            if (mView == null || !openModelViews.Contains(mView))
             {
-                dView = (DocView)openModelViews[mView];
-                openModelViews.Remove(mView);
-                mView = null;
-                dView = null;
+                return false;
             }
+
+            openModelViews.Remove(mView);
             return true;
         }
     }
@@ -197,18 +205,18 @@ namespace AxionFrame
 
                 case swComponentSuppressionState_e.swComponentFullyResolved:
                     {
-                        if ((modDoc != null) & !this.swAddin.OpenDocs.Contains(modDoc))
+                        if (modDoc != null && !swAddin.OpenDocs.Contains(modDoc))
                         {
-                            this.swAddin.AttachModelDocEventHandler(modDoc);
+                            swAddin.AttachModelDocEventHandler(modDoc);
                         }
                         break;
                     }
 
                 case swComponentSuppressionState_e.swComponentResolved:
                     {
-                        if ((modDoc != null) & !this.swAddin.OpenDocs.Contains(modDoc))
+                        if (modDoc != null && !swAddin.OpenDocs.Contains(modDoc))
                         {
-                            this.swAddin.AttachModelDocEventHandler(modDoc);
+                            swAddin.AttachModelDocEventHandler(modDoc);
                         }
                         break;
                     }
@@ -237,6 +245,11 @@ namespace AxionFrame
         int ComponentDisplayStateChangeNotify(object swObject)
         {
             Component2 component = (Component2)swObject;
+            if (component == null)
+            {
+                return 0;
+            }
+
             ModelDoc2 modDoc = (ModelDoc2)component.GetModelDoc();
 
             return ComponentStateChange(modDoc);
@@ -245,6 +258,11 @@ namespace AxionFrame
         int ComponentVisualPropertiesChangeNotify(object swObject)
         {
             Component2 component = (Component2)swObject;
+            if (component == null)
+            {
+                return 0;
+            }
+
             ModelDoc2 modDoc = (ModelDoc2)component.GetModelDoc();
 
             return ComponentStateChange(modDoc);

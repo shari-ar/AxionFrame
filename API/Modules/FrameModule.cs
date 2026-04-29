@@ -5,6 +5,12 @@ namespace AxionFrame
 {
     public sealed class FrameModule
     {
+        private const string DomainFrame = "FRM";
+        private const string ComponentLayout = "LAYOUT";
+        private const string ComponentProfile = "PROFILE";
+        private const string DescriptorPrimary = "PRIMARY";
+        private const string DescriptorMain = "MAIN";
+
         private readonly DeterministicNamingService _naming;
 
         public FrameModule()
@@ -16,7 +22,7 @@ namespace AxionFrame
         {
             if (naming == null)
             {
-                throw new ArgumentNullException("naming");
+                throw new ArgumentNullException(nameof(naming));
             }
 
             _naming = naming;
@@ -24,12 +30,12 @@ namespace AxionFrame
 
         public string GetLayoutPrimaryFeatureName()
         {
-            return _naming.CreateFeatureName("FRM", "LAYOUT", "PRIMARY");
+            return _naming.CreateFeatureName(DomainFrame, ComponentLayout, DescriptorPrimary);
         }
 
         public string GetProfileMainFeatureName()
         {
-            return _naming.CreateFeatureName("FRM", "PROFILE", "MAIN");
+            return _naming.CreateFeatureName(DomainFrame, ComponentProfile, DescriptorMain);
         }
 
         public IList<string> GetDeterministicFeatureNames()

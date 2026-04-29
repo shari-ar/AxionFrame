@@ -1,4 +1,5 @@
 using SolidWorksTools;
+using Microsoft.Win32;
 using System;
 using System.Runtime.InteropServices;
 
@@ -6,79 +7,97 @@ namespace AxionFrame
 {
     public partial class SwAddin
     {
+        private const string AddinsRegistryPathTemplate = "SOFTWARE\\SolidWorks\\Addins\\{{{0}}}";
+        private const string AddinsStartupRegistryPathTemplate = "Software\\SolidWorks\\AddInsStartup\\{{{0}}}";
+        private const string RegistryValueDescription = "Description";
+        private const string RegistryValueTitle = "Title";
+
         #region SolidWorks Registration
         [ComRegisterFunctionAttribute]
         public static void RegisterFunction(Type t)
         {
-            #region Get Custom Attribute: SwAddinAttribute
-            SwAddinAttribute SWattr = null;
-            Type type = typeof(SwAddin);
-
-            foreach (System.Attribute attr in type.GetCustomAttributes(false))
+            if (t == null)
             {
-                if (attr is SwAddinAttribute)
-                {
-                    SWattr = attr as SwAddinAttribute;
-                    break;
-                }
+                throw new ArgumentNullException(nameof(t));
             }
-
-            #endregion
 
             try
             {
-                Microsoft.Win32.RegistryKey hklm = Microsoft.Win32.Registry.LocalMachine;
-                Microsoft.Win32.RegistryKey hkcu = Microsoft.Win32.Registry.CurrentUser;
+                SwAddinAttribute addinAttributes = ResolveAddinAttribute();
 
-                string keyname = "SOFTWARE\\SolidWorks\\Addins\\{" + t.GUID.ToString() + "}";
-                Microsoft.Win32.RegistryKey addinkey = hklm.CreateSubKey(keyname);
-                addinkey.SetValue(null, 0);
+                string addinsKeyPath = string.Format(AddinsRegistryPathTemplate, t.GUID.ToString());
+                using (RegistryKey addinsKey = Registry.LocalMachine.CreateSubKey(addinsKeyPath))
+                {
+                    if (addinsKey == null)
+                    {
+                        throw new InvalidOperationException("SolidWorks add-in registry key could not be created.");
+                    }
 
-                addinkey.SetValue("Description", SWattr.Description);
-                addinkey.SetValue("Title", SWattr.Title);
+                    addinsKey.SetValue(null, 0);
+                    addinsKey.SetValue(RegistryValueDescription, addinAttributes.Description);
+                    addinsKey.SetValue(RegistryValueTitle, addinAttributes.Title);
+                }
 
-                keyname = "Software\\SolidWorks\\AddInsStartup\\{" + t.GUID.ToString() + "}";
-                addinkey = hkcu.CreateSubKey(keyname);
-                addinkey.SetValue(null, Convert.ToInt32(SWattr.LoadAtStartup), Microsoft.Win32.RegistryValueKind.DWord);
+                string startupKeyPath = string.Format(AddinsStartupRegistryPathTemplate, t.GUID.ToString());
+                using (RegistryKey startupKey = Registry.CurrentUser.CreateSubKey(startupKeyPath))
+                {
+                    if (startupKey == null)
+                    {
+                        throw new InvalidOperationException("SolidWorks startup registry key could not be created.");
+                    }
+
+                    startupKey.SetValue(null, Convert.ToInt32(addinAttributes.LoadAtStartup), RegistryValueKind.DWord);
+                }
             }
-            catch (System.NullReferenceException nl)
+            catch (Exception ex)
             {
-                Console.WriteLine("There was a problem registering this dll: SWattr is null. \n\"" + nl.Message + "\"");
-                System.Windows.Forms.MessageBox.Show("There was a problem registering this dll: SWattr is null.\n\"" + nl.Message + "\"");
-            }
-
-            catch (System.Exception e)
-            {
-                Console.WriteLine(e.Message);
-
-                System.Windows.Forms.MessageBox.Show("There was a problem registering the function: \n\"" + e.Message + "\"");
+                ReportRegistrationFailure("registering", ex);
             }
         }
 
         [ComUnregisterFunctionAttribute]
         public static void UnregisterFunction(Type t)
         {
+            if (t == null)
+            {
+                throw new ArgumentNullException(nameof(t));
+            }
+
             try
             {
-                Microsoft.Win32.RegistryKey hklm = Microsoft.Win32.Registry.LocalMachine;
-                Microsoft.Win32.RegistryKey hkcu = Microsoft.Win32.Registry.CurrentUser;
+                string addinsKeyPath = string.Format(AddinsRegistryPathTemplate, t.GUID.ToString());
+                Registry.LocalMachine.DeleteSubKey(addinsKeyPath, false);
 
-                string keyname = "SOFTWARE\\SolidWorks\\Addins\\{" + t.GUID.ToString() + "}";
-                hklm.DeleteSubKey(keyname);
+                string startupKeyPath = string.Format(AddinsStartupRegistryPathTemplate, t.GUID.ToString());
+                Registry.CurrentUser.DeleteSubKey(startupKeyPath, false);
+            }
+            catch (Exception ex)
+            {
+                ReportRegistrationFailure("unregistering", ex);
+            }
 
-                keyname = "Software\\SolidWorks\\AddInsStartup\\{" + t.GUID.ToString() + "}";
-                hkcu.DeleteSubKey(keyname);
-            }
-            catch (System.NullReferenceException nl)
+        }
+
+        private static SwAddinAttribute ResolveAddinAttribute()
+        {
+            Type addinType = typeof(SwAddin);
+            foreach (Attribute attr in addinType.GetCustomAttributes(false))
             {
-                Console.WriteLine("There was a problem unregistering this dll: " + nl.Message);
-                System.Windows.Forms.MessageBox.Show("There was a problem unregistering this dll: \n\"" + nl.Message + "\"");
+                SwAddinAttribute addinAttribute = attr as SwAddinAttribute;
+                if (addinAttribute != null)
+                {
+                    return addinAttribute;
+                }
             }
-            catch (System.Exception e)
-            {
-                Console.WriteLine("There was a problem unregistering this dll: " + e.Message);
-                System.Windows.Forms.MessageBox.Show("There was a problem unregistering this dll: \n\"" + e.Message + "\"");
-            }
+
+            throw new InvalidOperationException("SwAddinAttribute is not defined on SwAddin.");
+        }
+
+        private static void ReportRegistrationFailure(string action, Exception ex)
+        {
+            string message = "There was a problem " + action + " the add-in." + Environment.NewLine + "\"" + ex.Message + "\"";
+            Console.WriteLine(message);
+            System.Windows.Forms.MessageBox.Show(message);
         }
 
         #endregion

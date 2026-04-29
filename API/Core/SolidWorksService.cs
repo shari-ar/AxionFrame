@@ -120,13 +120,22 @@ namespace AxionFrame
                     BuildStageKind.GenerateParts,
                     delegate(StringBuilder details)
                     {
-                        AddRange(partArtifacts, _frameModule.GetDeterministicFeatureNames());
+                        FrameBuildOutput frameBuildOutput = _frameModule.CreateBuildOutput(validationResult.NormalizedConfig);
+                        AddRange(partArtifacts, frameBuildOutput.FeatureNames);
                         partArtifacts.Add(_pivotModule.GetJointPrimaryFeatureName());
                         partArtifacts.Add(_pivotModule.GetHolePatternFeatureName());
                         partArtifacts.Add(_plateBraceModule.GetBracePrimaryFeatureName());
                         partArtifacts.Add(_plateBraceModule.GetDxfTraceabilityFeatureName());
 
                         details.Append("partArtifacts=").Append(partArtifacts.Count.ToString(CultureInfo.InvariantCulture));
+                        details.Append("; frameExtentMin=").Append(FormatDecimalToken(frameBuildOutput.MemberExtentMin));
+                        details.Append("; frameExtentMax=").Append(FormatDecimalToken(frameBuildOutput.MemberExtentMax));
+                        details.Append("; framePlacementTolerance=").Append(FormatDecimalToken(frameBuildOutput.PlacementTolerance));
+                        details.Append("; frameProfileTolerance=").Append(FormatDecimalToken(frameBuildOutput.ProfileDimensionTolerance));
+                        details.Append("; frameProfiles=").Append(JoinWithPipe(frameBuildOutput.AllowedProfiles));
+                        details.Append("; frameNamingRuleSet=").Append(frameBuildOutput.NamingRuleSet);
+                        details.Append("; frameTracePoints=").Append(JoinWithPipe(frameBuildOutput.TracePoints));
+                        details.Append("; frameFeatureCount=").Append(frameBuildOutput.FeatureNames.Count.ToString(CultureInfo.InvariantCulture));
                     });
 
                 ExecuteStage(
@@ -318,6 +327,32 @@ namespace AxionFrame
             }
 
             return supportedHeights;
+        }
+
+        private static string JoinWithPipe(IList<string> values)
+        {
+            if (values == null || values.Count == 0)
+            {
+                return string.Empty;
+            }
+
+            StringBuilder builder = new StringBuilder();
+            for (int i = 0; i < values.Count; i++)
+            {
+                if (i > 0)
+                {
+                    builder.Append('|');
+                }
+
+                builder.Append(values[i]);
+            }
+
+            return builder.ToString();
+        }
+
+        private static string FormatDecimalToken(decimal value)
+        {
+            return value.ToString("0.############################", CultureInfo.InvariantCulture);
         }
 
         private static string BuildCanonicalConfigPayload(IDictionary<string, object> normalizedConfig)

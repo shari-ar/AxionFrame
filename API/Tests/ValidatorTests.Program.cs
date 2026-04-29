@@ -28,9 +28,12 @@ namespace AxionFrame.Tests
             Run("NamingRules_RequiredHooks_IncludeDocumentedTraceabilityHooks", NamingRules_RequiredHooks_IncludeDocumentedTraceabilityHooks);
             Run("NamingRules_ModuleSurface_ProducesDocumentedStableHooks", NamingRules_ModuleSurface_ProducesDocumentedStableHooks);
             Run("NamingRules_ModuleSurface_RepeatedOutputsRemainStable", NamingRules_ModuleSurface_RepeatedOutputsRemainStable);
+            Run("FrameBehavior_BuildOutput_UsesDocumentedBaselineRules", FrameBehavior_BuildOutput_UsesDocumentedBaselineRules);
+            Run("FrameBehavior_BuildOutput_RepeatedOutputsRemainStable", FrameBehavior_BuildOutput_RepeatedOutputsRemainStable);
             Run("BuildLifecycle_Metadata_IsPopulated", BuildLifecycle_Metadata_IsPopulated);
             Run("BuildLifecycle_ConfigHash_IsStableForIdenticalInputs", BuildLifecycle_ConfigHash_IsStableForIdenticalInputs);
             Run("BuildLifecycle_StageOrder_IsDeterministic", BuildLifecycle_StageOrder_IsDeterministic);
+            Run("BuildLifecycle_GeneratePartsStage_RecordsFrameTraceabilityDetails", BuildLifecycle_GeneratePartsStage_RecordsFrameTraceabilityDetails);
             Run("BuildLifecycle_SummaryArtifacts_AreWritten", BuildLifecycle_SummaryArtifacts_AreWritten);
             Run("BuildLifecycle_Regression_ThreeConsecutiveRuns_NoUnhandledExceptions", BuildLifecycle_Regression_ThreeConsecutiveRuns_NoUnhandledExceptions);
 
@@ -297,6 +300,65 @@ namespace AxionFrame.Tests
             }
         }
 
+        private static void FrameBehavior_BuildOutput_UsesDocumentedBaselineRules()
+        {
+            ConfigurationProcessingResult validationResult = Execute(BaselineJson());
+            FrameModule frameModule = new FrameModule(new DeterministicNamingService());
+
+            FrameBuildOutput output = frameModule.CreateBuildOutput(validationResult.NormalizedConfig);
+            AssertEqual(2, output.FeatureNames.Count, "Unexpected frame feature count.");
+            AssertEqual("AXF_FRM_LAYOUT_PRIMARY", output.FeatureNames[0], "Unexpected frame layout feature.");
+            AssertEqual("AXF_FRM_PROFILE_MAIN", output.FeatureNames[1], "Unexpected frame profile feature.");
+
+            AssertEqual(620.0m, output.MemberExtentMin, "Unexpected frame member extent minimum.");
+            AssertEqual(980.0m, output.MemberExtentMax, "Unexpected frame member extent maximum.");
+            AssertEqual(0.5m, output.PlacementTolerance, "Unexpected frame placement tolerance.");
+            AssertEqual(0.2m, output.ProfileDimensionTolerance, "Unexpected frame profile dimension tolerance.");
+            AssertEqual(DeterministicNamingService.RuleSetStandardV1, output.NamingRuleSet, "Unexpected frame naming rule set.");
+
+            AssertEqual(2, output.AllowedProfiles.Count, "Unexpected frame profile count.");
+            AssertEqual("40x40x2.0_SHS", output.AllowedProfiles[0], "Unexpected first baseline profile.");
+            AssertEqual("60x30x2.0_RHS", output.AllowedProfiles[1], "Unexpected second baseline profile.");
+
+            AssertEqual(3, output.TracePoints.Count, "Unexpected frame trace-point count.");
+            AssertEqual("frame.layout", output.TracePoints[0], "Unexpected frame layout trace point.");
+            AssertEqual("frame.members", output.TracePoints[1], "Unexpected frame members trace point.");
+            AssertEqual("traceability.naming.frame", output.TracePoints[2], "Unexpected frame naming trace point.");
+        }
+
+        private static void FrameBehavior_BuildOutput_RepeatedOutputsRemainStable()
+        {
+            ConfigurationProcessingResult validationResult = Execute(BaselineJson());
+            FrameModule frameModule = new FrameModule(new DeterministicNamingService());
+
+            FrameBuildOutput firstOutput = frameModule.CreateBuildOutput(validationResult.NormalizedConfig);
+            FrameBuildOutput secondOutput = frameModule.CreateBuildOutput(validationResult.NormalizedConfig);
+
+            AssertEqual(firstOutput.FeatureNames.Count, secondOutput.FeatureNames.Count, "Frame feature count should remain stable across repeated runs.");
+            AssertEqual(firstOutput.AllowedProfiles.Count, secondOutput.AllowedProfiles.Count, "Frame profile count should remain stable across repeated runs.");
+            AssertEqual(firstOutput.TracePoints.Count, secondOutput.TracePoints.Count, "Frame trace-point count should remain stable across repeated runs.");
+            AssertEqual(firstOutput.MemberExtentMin, secondOutput.MemberExtentMin, "Frame member extent minimum should remain stable across repeated runs.");
+            AssertEqual(firstOutput.MemberExtentMax, secondOutput.MemberExtentMax, "Frame member extent maximum should remain stable across repeated runs.");
+            AssertEqual(firstOutput.PlacementTolerance, secondOutput.PlacementTolerance, "Frame placement tolerance should remain stable across repeated runs.");
+            AssertEqual(firstOutput.ProfileDimensionTolerance, secondOutput.ProfileDimensionTolerance, "Frame profile tolerance should remain stable across repeated runs.");
+            AssertEqual(firstOutput.NamingRuleSet, secondOutput.NamingRuleSet, "Frame naming rule-set should remain stable across repeated runs.");
+
+            for (int i = 0; i < firstOutput.FeatureNames.Count; i++)
+            {
+                AssertEqual(firstOutput.FeatureNames[i], secondOutput.FeatureNames[i], "Frame feature output mismatch at index " + i.ToString(CultureInfo.InvariantCulture) + ".");
+            }
+
+            for (int i = 0; i < firstOutput.AllowedProfiles.Count; i++)
+            {
+                AssertEqual(firstOutput.AllowedProfiles[i], secondOutput.AllowedProfiles[i], "Frame profile output mismatch at index " + i.ToString(CultureInfo.InvariantCulture) + ".");
+            }
+
+            for (int i = 0; i < firstOutput.TracePoints.Count; i++)
+            {
+                AssertEqual(firstOutput.TracePoints[i], secondOutput.TracePoints[i], "Frame trace-point output mismatch at index " + i.ToString(CultureInfo.InvariantCulture) + ".");
+            }
+        }
+
         private static void BuildLifecycle_Metadata_IsPopulated()
         {
             string outputRootPath = CreateTempOutputRootPath();
@@ -340,6 +402,30 @@ namespace AxionFrame.Tests
             {
                 BuildExecutionResult result = ExecuteBuildWorkflow(BaselineJson(), outputRootPath);
                 AssertBuildStageOrder(result.StageRecords);
+            }
+            finally
+            {
+                DeleteDirectoryIfExists(outputRootPath);
+            }
+        }
+
+        private static void BuildLifecycle_GeneratePartsStage_RecordsFrameTraceabilityDetails()
+        {
+            string outputRootPath = CreateTempOutputRootPath();
+            try
+            {
+                BuildExecutionResult result = ExecuteBuildWorkflow(BaselineJson(), outputRootPath);
+                BuildStageRecord generatePartsStage = FindStage(result.StageRecords, "generate parts");
+
+                AssertTrue(generatePartsStage != null, "Generate-parts stage record should exist.");
+                AssertTrue(!string.IsNullOrWhiteSpace(generatePartsStage.Details), "Generate-parts stage details should be populated.");
+                AssertTrue(generatePartsStage.Details.IndexOf("frameExtentMin=620", StringComparison.Ordinal) >= 0, "Generate-parts stage details should include frame extent minimum.");
+                AssertTrue(generatePartsStage.Details.IndexOf("frameExtentMax=980", StringComparison.Ordinal) >= 0, "Generate-parts stage details should include frame extent maximum.");
+                AssertTrue(generatePartsStage.Details.IndexOf("framePlacementTolerance=0.5", StringComparison.Ordinal) >= 0, "Generate-parts stage details should include frame placement tolerance.");
+                AssertTrue(generatePartsStage.Details.IndexOf("frameProfileTolerance=0.2", StringComparison.Ordinal) >= 0, "Generate-parts stage details should include frame profile tolerance.");
+                AssertTrue(generatePartsStage.Details.IndexOf("frameProfiles=40x40x2.0_SHS|60x30x2.0_RHS", StringComparison.Ordinal) >= 0, "Generate-parts stage details should include baseline frame profiles.");
+                AssertTrue(generatePartsStage.Details.IndexOf("frameNamingRuleSet=AXF_STANDARD_V1", StringComparison.Ordinal) >= 0, "Generate-parts stage details should include frame naming rule-set.");
+                AssertTrue(generatePartsStage.Details.IndexOf("frameTracePoints=frame.layout|frame.members|traceability.naming.frame", StringComparison.Ordinal) >= 0, "Generate-parts stage details should include frame trace points.");
             }
             finally
             {
@@ -458,6 +544,19 @@ namespace AxionFrame.Tests
             AssertEqual("generate parts", stages[2].StageName, "Unexpected stage at index 2.");
             AssertEqual("generate assembly", stages[3].StageName, "Unexpected stage at index 3.");
             AssertEqual("summary", stages[4].StageName, "Unexpected stage at index 4.");
+        }
+
+        private static BuildStageRecord FindStage(IList<BuildStageRecord> stages, string stageName)
+        {
+            for (int i = 0; i < stages.Count; i++)
+            {
+                if (string.Equals(stages[i].StageName, stageName, StringComparison.Ordinal))
+                {
+                    return stages[i];
+                }
+            }
+
+            return null;
         }
 
         private static ConfigurationProcessingResult Execute(string json)

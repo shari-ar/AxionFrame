@@ -37,8 +37,23 @@
     <Reference Include="System.Web.Extensions" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="..\Core\DeterministicNamingService.cs">
+      <Link>Core\DeterministicNamingService.cs</Link>
+    </Compile>
     <Compile Include="..\Core\FeatureManager.cs">
       <Link>Core\FeatureManager.cs</Link>
+    </Compile>
+    <Compile Include="..\Modules\FrameModule.cs">
+      <Link>Modules\FrameModule.cs</Link>
+    </Compile>
+    <Compile Include="..\Modules\PivotModule.cs">
+      <Link>Modules\PivotModule.cs</Link>
+    </Compile>
+    <Compile Include="..\Modules\HeightAdjustModule.cs">
+      <Link>Modules\HeightAdjustModule.cs</Link>
+    </Compile>
+    <Compile Include="..\Modules\PlateBraceModule.cs">
+      <Link>Modules\PlateBraceModule.cs</Link>
     </Compile>
     <Compile Include="ValidatorTests.Program.cs" />
   </ItemGroup>

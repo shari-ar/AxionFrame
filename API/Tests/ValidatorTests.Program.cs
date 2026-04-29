@@ -18,6 +18,16 @@ namespace AxionFrame.Tests
             Run("CrossFieldValidation_FrameMinGreaterThanMax_ReportsCritical", CrossFieldValidation_FrameMinGreaterThanMax_ReportsCritical);
             Run("CrossFieldValidation_StrictReleaseRequiresStopOnCriticalFailure", CrossFieldValidation_StrictReleaseRequiresStopOnCriticalFailure);
             Run("CrossFieldValidation_HeightSupportedSetMustMatch", CrossFieldValidation_HeightSupportedSetMustMatch);
+            Run("NamingRules_PrefixSelection_UsesCanonicalPrefixes", NamingRules_PrefixSelection_UsesCanonicalPrefixes);
+            Run("NamingRules_DomainTokenMapping_ResolvesDocumentedDomains", NamingRules_DomainTokenMapping_ResolvesDocumentedDomains);
+            Run("NamingRules_Normalization_ReplacesPunctuationAndCollapsesUnderscores", NamingRules_Normalization_ReplacesPunctuationAndCollapsesUnderscores);
+            Run("NamingRules_Normalization_UppercasesTokens", NamingRules_Normalization_UppercasesTokens);
+            Run("NamingRules_HeightConfigurations_UseDecimalFreeTokens", NamingRules_HeightConfigurations_UseDecimalFreeTokens);
+            Run("NamingRules_RepeatRuns_AreStableForIdenticalInputs", NamingRules_RepeatRuns_AreStableForIdenticalInputs);
+            Run("NamingRules_ComplianceValidation_VerifiesEntityGrammar", NamingRules_ComplianceValidation_VerifiesEntityGrammar);
+            Run("NamingRules_RequiredHooks_IncludeDocumentedTraceabilityHooks", NamingRules_RequiredHooks_IncludeDocumentedTraceabilityHooks);
+            Run("NamingRules_ModuleSurface_ProducesDocumentedStableHooks", NamingRules_ModuleSurface_ProducesDocumentedStableHooks);
+            Run("NamingRules_ModuleSurface_RepeatedOutputsRemainStable", NamingRules_ModuleSurface_RepeatedOutputsRemainStable);
 
             if (_failureCount > 0)
             {
@@ -102,6 +112,209 @@ namespace AxionFrame.Tests
             AssertEqual(ValidationSeverity.Critical, message.Severity, "Unexpected severity for height supported set cross-field message.");
             AssertTrue(message.Blocking, "Height supported set cross-field message should be blocking.");
             AssertHasContractFields(message);
+        }
+
+        private static void NamingRules_PrefixSelection_UsesCanonicalPrefixes()
+        {
+            DeterministicNamingService naming = new DeterministicNamingService();
+
+            AssertEqual("AXF_FRM_LAYOUT_PRIMARY", naming.CreateFeatureName("frame", "layout", "primary"), "Unexpected frame feature naming prefix.");
+            AssertEqual("AXF_PVT_JOINT_PRIMARY", naming.CreateFeatureName("pivot", "joint", "primary"), "Unexpected pivot feature naming prefix.");
+            AssertEqual("AXF_PLT_BRACE_PRIMARY", naming.CreateFeatureName("plate brace", "brace", "primary"), "Unexpected plate/brace feature naming prefix.");
+            AssertEqual("AXF_MATE_PVT_PRIMARY", naming.CreateMateName("pivot", "primary"), "Unexpected mate naming prefix.");
+            AssertEqual("AXF_CFG_HGT_680", naming.CreateHeightConfigurationName(680.0m), "Unexpected configuration naming prefix.");
+            AssertEqual("AXF_EXP_DXF_PLATE_SET", naming.CreateExportArtifactName("dxf", "plate set"), "Unexpected export naming prefix.");
+            AssertEqual("AXF_VAL_PLT_TRACEABILITY", naming.CreateValidationSectionIdentifier("plate brace", "traceability"), "Unexpected validation naming prefix.");
+        }
+
+        private static void NamingRules_DomainTokenMapping_ResolvesDocumentedDomains()
+        {
+            DeterministicNamingService naming = new DeterministicNamingService();
+
+            AssertEqual("FRM", naming.ResolveDomainToken("Frame"), "Frame domain token mismatch.");
+            AssertEqual("PVT", naming.ResolveDomainToken("pivot"), "Pivot domain token mismatch.");
+            AssertEqual("HGT", naming.ResolveDomainToken("height indexing"), "Height domain token mismatch.");
+            AssertEqual("PLT", naming.ResolveDomainToken("plate and brace"), "Plate/brace domain token mismatch.");
+            AssertThrows<ArgumentException>(
+                delegate { naming.ResolveDomainToken("unsupported-domain"); },
+                "Unsupported naming domains must throw ArgumentException.");
+        }
+
+        private static void NamingRules_Normalization_ReplacesPunctuationAndCollapsesUnderscores()
+        {
+            DeterministicNamingService naming = new DeterministicNamingService();
+
+            AssertEqual("LAYOUT_PRIMARY_MAIN", naming.NormalizeToken("layout...primary---main"), "Unexpected punctuation normalization result.");
+            AssertEqual("PIVOT_JOINT_PRIMARY", naming.NormalizeToken("__pivot///joint___primary__"), "Unexpected duplicate underscore normalization result.");
+            AssertEqual("AXF_FRM_LAYOUT_PRIMARY", naming.CreateFeatureName("frame", "layout", "_primary_"), "Feature names should not emit duplicate underscores.");
+        }
+
+        private static void NamingRules_Normalization_UppercasesTokens()
+        {
+            DeterministicNamingService naming = new DeterministicNamingService();
+
+            AssertEqual("PROFILE_MAIN", naming.NormalizeToken("profile main"), "Normalized token should be uppercase.");
+            AssertEqual("AXF_MATE_PVT_PRIMARY_LOCK", naming.CreateMateName("pivot", "primary lock"), "Mate naming tokens should be uppercase.");
+            AssertEqual("AXF_EXP_STEP_FRAME_LAYOUT", naming.CreateExportArtifactName("step", "Frame Layout"), "Export naming tokens should be uppercase.");
+        }
+
+        private static void NamingRules_HeightConfigurations_UseDecimalFreeTokens()
+        {
+            DeterministicNamingService naming = new DeterministicNamingService();
+
+            AssertEqual("680", naming.NormalizeDiscreteNumericToken(680.0m), "Discrete height token should be decimal-free.");
+            AssertEqual("730", naming.NormalizeDiscreteNumericToken(730m), "Discrete height token should remain decimal-free.");
+            AssertEqual("AXF_CFG_HGT_780", naming.CreateHeightConfigurationName(780.0m), "Height configuration naming should use decimal-free token.");
+        }
+
+        private static void NamingRules_RepeatRuns_AreStableForIdenticalInputs()
+        {
+            DeterministicNamingService naming = new DeterministicNamingService();
+
+            string[] firstRun =
+            {
+                naming.CreateFeatureName("frame", "layout", "primary"),
+                naming.CreateMateName("pivot", "primary"),
+                naming.CreateHeightConfigurationName(680.0m),
+                naming.CreateExportArtifactName("dxf", "plate set"),
+                naming.CreateValidationSectionIdentifier("plate brace", "traceability")
+            };
+
+            string[] secondRun =
+            {
+                naming.CreateFeatureName("frame", "layout", "primary"),
+                naming.CreateMateName("pivot", "primary"),
+                naming.CreateHeightConfigurationName(680.0m),
+                naming.CreateExportArtifactName("dxf", "plate set"),
+                naming.CreateValidationSectionIdentifier("plate brace", "traceability")
+            };
+
+            for (int i = 0; i < firstRun.Length; i++)
+            {
+                AssertEqual(firstRun[i], secondRun[i], "Deterministic naming mismatch between repeated runs at index " + i.ToString(CultureInfo.InvariantCulture) + ".");
+            }
+        }
+
+        private static void NamingRules_ComplianceValidation_VerifiesEntityGrammar()
+        {
+            DeterministicNamingService naming = new DeterministicNamingService();
+
+            AssertTrue(naming.IsCompliantName("AXF_FRM_LAYOUT_PRIMARY", NamingEntityType.Feature), "Expected compliant feature name.");
+            AssertTrue(naming.IsCompliantName("AXF_MATE_PVT_PRIMARY", NamingEntityType.Mate), "Expected compliant mate name.");
+            AssertTrue(naming.IsCompliantName("AXF_CFG_HGT_680", NamingEntityType.Configuration), "Expected compliant configuration name.");
+            AssertTrue(naming.IsCompliantName("AXF_EXP_DXF_PLATE_SET", NamingEntityType.ExportArtifact), "Expected compliant export name.");
+            AssertTrue(naming.IsCompliantName("AXF_VAL_PLT_TRACEABILITY", NamingEntityType.ValidationSection), "Expected compliant validation name.");
+
+            AssertFalse(naming.IsCompliantName("axf_frm_layout_primary", NamingEntityType.Feature), "Lowercase names should be rejected.");
+            AssertFalse(naming.IsCompliantName("AXF_FRM_LAYOUT__PRIMARY", NamingEntityType.Feature), "Duplicate underscores should be rejected.");
+            AssertFalse(naming.IsCompliantName("AXF_MATE_PVT_PRIMARY", NamingEntityType.Feature), "Entity-type mismatch should be rejected.");
+        }
+
+        private static void NamingRules_RequiredHooks_IncludeDocumentedTraceabilityHooks()
+        {
+            DeterministicNamingService naming = new DeterministicNamingService();
+            IDictionary<string, string> hooks = naming.GetRequiredStableHooks();
+
+            AssertEqual(12, hooks.Count, "Required stable hook count mismatch.");
+            AssertTrue(hooks.ContainsKey("FRM-001"), "Required hook FRM-001 is missing.");
+            AssertTrue(hooks.ContainsKey("PVT-003"), "Required hook PVT-003 is missing.");
+            AssertTrue(hooks.ContainsKey("HGT-002"), "Required hook HGT-002 is missing.");
+            AssertTrue(hooks.ContainsKey("PLT-003"), "Required hook PLT-003 is missing.");
+            AssertEqual("AXF_FRM_LAYOUT_PRIMARY", hooks["FRM-001"], "Unexpected FRM-001 hook value.");
+            AssertEqual("AXF_MATE_PVT_PRIMARY", hooks["PVT-003"], "Unexpected PVT-003 hook value.");
+            AssertEqual("AXF_CFG_HEIGHT_INDEXED", hooks["HGT-002"], "Unexpected HGT-002 hook value.");
+            AssertEqual("AXF_PLT_*", hooks["PLT-003"], "Unexpected PLT-003 hook value.");
+
+            AssertEqual("AXF_FRM_LAYOUT_PRIMARY", naming.GetRequiredStableHook("FRM-001"), "Unexpected direct stable-hook lookup for FRM-001.");
+            AssertThrows<ArgumentException>(
+                delegate { naming.GetRequiredStableHook("UNKNOWN-RULE"); },
+                "Unknown stable-hook ids must throw ArgumentException.");
+        }
+
+        private static void NamingRules_ModuleSurface_ProducesDocumentedStableHooks()
+        {
+            DeterministicNamingService naming = new DeterministicNamingService();
+            FrameModule frameModule = new FrameModule(naming);
+            PivotModule pivotModule = new PivotModule(naming);
+            HeightAdjustModule heightModule = new HeightAdjustModule(naming);
+            PlateBraceModule plateBraceModule = new PlateBraceModule(naming);
+
+            IList<string> frameNames = frameModule.GetDeterministicFeatureNames();
+            AssertEqual(2, frameNames.Count, "Unexpected frame deterministic name count.");
+            AssertEqual("AXF_FRM_LAYOUT_PRIMARY", frameNames[0], "Unexpected frame layout hook.");
+            AssertEqual("AXF_FRM_PROFILE_MAIN", frameNames[1], "Unexpected frame profile hook.");
+            AssertTrue(naming.IsCompliantName(frameNames[0], NamingEntityType.Feature), "Frame layout hook should be grammar compliant.");
+            AssertTrue(naming.IsCompliantName(frameNames[1], NamingEntityType.Feature), "Frame profile hook should be grammar compliant.");
+
+            IList<string> pivotNames = pivotModule.GetDeterministicIdentifiers();
+            AssertEqual(3, pivotNames.Count, "Unexpected pivot deterministic name count.");
+            AssertEqual("AXF_PVT_JOINT_PRIMARY", pivotNames[0], "Unexpected pivot joint hook.");
+            AssertEqual("AXF_PVT_HOLE_PATTERN", pivotNames[1], "Unexpected pivot hole hook.");
+            AssertEqual("AXF_MATE_PVT_PRIMARY", pivotNames[2], "Unexpected pivot mate hook.");
+            AssertTrue(naming.IsCompliantName(pivotNames[0], NamingEntityType.Feature), "Pivot joint hook should be grammar compliant.");
+            AssertTrue(naming.IsCompliantName(pivotNames[1], NamingEntityType.Feature), "Pivot hole hook should be grammar compliant.");
+            AssertTrue(naming.IsCompliantName(pivotNames[2], NamingEntityType.Mate), "Pivot mate hook should be grammar compliant.");
+
+            IList<string> heightConfigNames = heightModule.CreateSupportedConfigurationNames(new List<decimal> { 680.0m, 730.0m, 780.0m });
+            AssertEqual(3, heightConfigNames.Count, "Unexpected supported-height configuration name count.");
+            AssertEqual("AXF_CFG_HGT_680", heightConfigNames[0], "Unexpected 680mm configuration hook.");
+            AssertEqual("AXF_CFG_HGT_730", heightConfigNames[1], "Unexpected 730mm configuration hook.");
+            AssertEqual("AXF_CFG_HGT_780", heightConfigNames[2], "Unexpected 780mm configuration hook.");
+            AssertTrue(naming.IsCompliantName(heightConfigNames[0], NamingEntityType.Configuration), "680mm configuration hook should be grammar compliant.");
+            AssertTrue(naming.IsCompliantName(heightConfigNames[1], NamingEntityType.Configuration), "730mm configuration hook should be grammar compliant.");
+            AssertTrue(naming.IsCompliantName(heightConfigNames[2], NamingEntityType.Configuration), "780mm configuration hook should be grammar compliant.");
+            AssertEqual("AXF_CFG_HEIGHT_INDEXED", heightModule.GetIndexedActivationHook(), "Unexpected indexed activation hook.");
+            AssertEqual("AXF_HGT_VALIDATION_SET", heightModule.GetValidationSetHook(), "Unexpected height validation hook.");
+
+            IList<string> plateBraceNames = plateBraceModule.GetDeterministicIdentifiers();
+            AssertEqual(4, plateBraceNames.Count, "Unexpected plate/brace deterministic name count.");
+            AssertEqual("AXF_PLT_BRACE_PRIMARY", plateBraceNames[0], "Unexpected plate/brace primary hook.");
+            AssertEqual("AXF_PLT_EXPORT_DXF", plateBraceNames[1], "Unexpected plate/brace DXF traceability hook.");
+            AssertEqual("AXF_EXP_DXF_PLATE_SET", plateBraceNames[2], "Unexpected DXF export artifact hook.");
+            AssertEqual("AXF_VAL_PLT_TRACEABILITY", plateBraceNames[3], "Unexpected plate/brace validation section hook.");
+            AssertTrue(naming.IsCompliantName(plateBraceNames[0], NamingEntityType.Feature), "Plate/brace primary hook should be grammar compliant.");
+            AssertTrue(naming.IsCompliantName(plateBraceNames[1], NamingEntityType.Feature), "Plate/brace DXF traceability hook should be grammar compliant.");
+            AssertTrue(naming.IsCompliantName(plateBraceNames[2], NamingEntityType.ExportArtifact), "DXF export artifact hook should be grammar compliant.");
+            AssertTrue(naming.IsCompliantName(plateBraceNames[3], NamingEntityType.ValidationSection), "Plate/brace validation section hook should be grammar compliant.");
+        }
+
+        private static void NamingRules_ModuleSurface_RepeatedOutputsRemainStable()
+        {
+            DeterministicNamingService naming = new DeterministicNamingService();
+
+            string[] firstRun = BuildModuleSurfaceNamingSnapshot(naming);
+            string[] secondRun = BuildModuleSurfaceNamingSnapshot(naming);
+
+            AssertEqual(firstRun.Length, secondRun.Length, "Repeated naming snapshots must have identical lengths.");
+            for (int i = 0; i < firstRun.Length; i++)
+            {
+                AssertEqual(firstRun[i], secondRun[i], "Repeated naming snapshots differ at index " + i.ToString(CultureInfo.InvariantCulture) + ".");
+            }
+        }
+
+        private static string[] BuildModuleSurfaceNamingSnapshot(DeterministicNamingService naming)
+        {
+            FrameModule frameModule = new FrameModule(naming);
+            PivotModule pivotModule = new PivotModule(naming);
+            HeightAdjustModule heightModule = new HeightAdjustModule(naming);
+            PlateBraceModule plateBraceModule = new PlateBraceModule(naming);
+
+            List<string> snapshot = new List<string>();
+            AddRange(snapshot, frameModule.GetDeterministicFeatureNames());
+            AddRange(snapshot, pivotModule.GetDeterministicIdentifiers());
+            AddRange(snapshot, heightModule.CreateSupportedConfigurationNames(new List<decimal> { 680.0m, 730.0m, 780.0m }));
+            snapshot.Add(heightModule.GetIndexedActivationHook());
+            snapshot.Add(heightModule.GetValidationSetHook());
+            AddRange(snapshot, plateBraceModule.GetDeterministicIdentifiers());
+            return snapshot.ToArray();
+        }
+
+        private static void AddRange(IList<string> target, IList<string> source)
+        {
+            for (int i = 0; i < source.Count; i++)
+            {
+                target.Add(source[i]);
+            }
         }
 
         private static ConfigurationProcessingResult Execute(string json)
@@ -189,6 +402,25 @@ namespace AxionFrame.Tests
             if (!Equals(expected, actual))
             {
                 throw new InvalidOperationException(message + " Expected: " + expected + " Actual: " + actual);
+            }
+        }
+
+        private static void AssertThrows<TException>(Action action, string message) where TException : Exception
+        {
+            bool thrown = false;
+
+            try
+            {
+                action();
+            }
+            catch (TException)
+            {
+                thrown = true;
+            }
+
+            if (!thrown)
+            {
+                throw new InvalidOperationException(message);
             }
         }
 

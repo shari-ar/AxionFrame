@@ -17,7 +17,7 @@ namespace AxionFrame
             if (iBmp == null)
                 iBmp = new BitmapHandler();
             Assembly thisAssembly;
-            int cmdIndex0, cmdIndex1;
+            int cmdIndexPmp, cmdIndexBuild, cmdIndexOutput;
             string Title = "AxionFrame", ToolTip = "AxionFrame";
 
 
@@ -35,7 +35,7 @@ namespace AxionFrame
             //get the ID information stored in the registry
             bool getDataResult = iCmdMgr.GetGroupDataFromRegistry(mainCmdGroupID, out registryIDs);
 
-            int[] knownIDs = new int[2] { mainItemID1, mainItemID2 };
+            int[] knownIDs = new int[3] { mainItemID1, mainItemID2, mainItemID3 };
 
             if (getDataResult)
             {
@@ -66,8 +66,9 @@ namespace AxionFrame
             cmdGroup.IconList = icons;
 
             int menuToolbarOption = (int)(swCommandItemType_e.swMenuItem | swCommandItemType_e.swToolbarItem);
-            cmdIndex0 = cmdGroup.AddCommandItem2("Build", -1, "Run Build workflow", "Build", 0, "RunBuildCommand", "EnableBuildCommand", mainItemID1, menuToolbarOption);
-            cmdIndex1 = cmdGroup.AddCommandItem2("Show PMP", -1, "Display property manager", "Show PMP", 2, "ShowPMP", "EnablePMP", mainItemID2, menuToolbarOption);
+            cmdIndexPmp = cmdGroup.AddCommandItem2("PMP", -1, "Display parameter settings", "PMP", 2, "ShowPMP", "EnablePMP", mainItemID1, menuToolbarOption);
+            cmdIndexBuild = cmdGroup.AddCommandItem2("Build", -1, "Run Build workflow", "Build", 0, "RunBuildCommand", "EnableBuildCommand", mainItemID2, menuToolbarOption);
+            cmdIndexOutput = cmdGroup.AddCommandItem2("Output", -1, "Run Final Output workflow", "Output", 1, "RunOutputCommand", "EnableOutputCommand", mainItemID3, menuToolbarOption);
 
             cmdGroup.HasToolbar = true;
             cmdGroup.HasMenu = true;
@@ -104,30 +105,16 @@ namespace AxionFrame
                     int[] cmdIDs = new int[3];
                     int[] TextType = new int[3];
 
-                    cmdIDs[0] = cmdGroup.get_CommandID(cmdIndex0);
+                    cmdIDs[0] = cmdGroup.get_CommandID(cmdIndexPmp);
+                    TextType[0] = (int)swCommandTabButtonTextDisplay_e.swCommandTabButton_TextBelow;
 
-                    TextType[0] = (int)swCommandTabButtonTextDisplay_e.swCommandTabButton_TextHorizontal;
+                    cmdIDs[1] = cmdGroup.get_CommandID(cmdIndexBuild);
+                    TextType[1] = (int)swCommandTabButtonTextDisplay_e.swCommandTabButton_TextBelow;
 
-                    cmdIDs[1] = cmdGroup.get_CommandID(cmdIndex1);
-
-                    TextType[1] = (int)swCommandTabButtonTextDisplay_e.swCommandTabButton_TextHorizontal;
-
-                    cmdIDs[2] = cmdGroup.ToolbarId;
-
-                    TextType[2] = (int)swCommandTabButtonTextDisplay_e.swCommandTabButton_TextHorizontal | (int)swCommandTabButtonFlyoutStyle_e.swCommandTabButton_ActionFlyout;
+                    cmdIDs[2] = cmdGroup.get_CommandID(cmdIndexOutput);
+                    TextType[2] = (int)swCommandTabButtonTextDisplay_e.swCommandTabButton_TextBelow;
 
                     bResult = cmdBox.AddCommands(cmdIDs, TextType);
-
-                    CommandTabBox cmdBox1 = cmdTab.AddCommandTabBox();
-                    cmdIDs = new int[1];
-                    TextType = new int[1];
-
-                    cmdIDs[0] = flyGroup.CmdID;
-                    TextType[0] = (int)swCommandTabButtonTextDisplay_e.swCommandTabButton_TextBelow | (int)swCommandTabButtonFlyoutStyle_e.swCommandTabButton_ActionFlyout;
-
-                    bResult = cmdBox1.AddCommands(cmdIDs, TextType);
-
-                    cmdTab.AddSeparator(cmdBox1, cmdIDs[0]);
                 }
             }
 
@@ -240,13 +227,33 @@ namespace AxionFrame
             catch (Exception ex)
             {
                 // Surface failures to the user as a controlled SolidWorks message instead of bubbling exceptions into COM callbacks.
-                string message = "Build workflow failed unexpectedly." + Environment.NewLine +
+                string message = "Build workflow failed unexpectedly." + System.Environment.NewLine +
                                  ex.GetType().Name + ": " + ex.Message;
                 iSwApp.SendMsgToUser2(message, (int)swMessageBoxIcon_e.swMbStop, (int)swMessageBoxBtn_e.swMbOk);
             }
         }
 
         public int EnableBuildCommand()
+        {
+            if (iSwApp.ActiveDoc != null)
+                return 1;
+            else
+                return 0;
+        }
+
+        public void RunOutputCommand()
+        {
+            if (iSwApp == null)
+            {
+                return;
+            }
+
+            string message = "Final Output workflow is not available yet." + System.Environment.NewLine +
+                             "Use Build to generate the current CAD baseline.";
+            iSwApp.SendMsgToUser2(message, (int)swMessageBoxIcon_e.swMbInformation, (int)swMessageBoxBtn_e.swMbOk);
+        }
+
+        public int EnableOutputCommand()
         {
             if (iSwApp.ActiveDoc != null)
                 return 1;

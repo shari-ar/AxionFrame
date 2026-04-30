@@ -5,261 +5,171 @@ using System;
 
 namespace AxionFrame
 {
-    public class UserPMPage
+    public sealed class UserPMPage
     {
-        //Local Objects
+        private const string PageTitle = "AxionFrame Settings";
+        private const int GeometryTabId = 11;
+        private const int RuntimeTabId = 12;
+        private const int FrameGroupId = 101;
+        private const int PivotGroupId = 102;
+        private const int HeightGroupId = 103;
+        private const int PlateBraceGroupId = 104;
+        private const int RuntimeGroupId = 105;
+
+        private int _nextControlId = 1000;
+        private readonly ISldWorks _swApp;
+        private readonly SwAddin _userAddin;
+
         public IPropertyManagerPage2 swPropertyPage = null;
-        PMPHandler handler = null;
-        ISldWorks iSwApp = null;
-        SwAddin userAddin = null;
-        IPropertyManagerPageTab ppagetab1 = null;
-        IPropertyManagerPageTab ppagetab2 = null;
-
-        #region Property Manager Page Controls
-        //Groups
-        IPropertyManagerPageGroup group1;
-        IPropertyManagerPageGroup group2;
-
-        //Controls
-        IPropertyManagerPageTextbox textbox1;
-        IPropertyManagerPageCheckbox checkbox1;
-        IPropertyManagerPageOption option1;
-        IPropertyManagerPageOption option2;
-        IPropertyManagerPageOption option3;
-        IPropertyManagerPageListbox list1;
-
-        IPropertyManagerPageSelectionbox selection1;
-        IPropertyManagerPageNumberbox num1;
-        IPropertyManagerPageCombobox combo1;
-
-        IPropertyManagerPageButton button1;
-        IPropertyManagerPageButton button2;
-        public IPropertyManagerPageTextbox textbox2;
-        public IPropertyManagerPageTextbox textbox3;
-
-        //Control IDs
-        public const int group1ID = 0;
-        public const int group2ID = 1;
-
-        public const int textbox1ID = 2;
-        public const int checkbox1ID = 3;
-        public const int option1ID = 4;
-        public const int option2ID = 5;
-        public const int option3ID = 6;
-        public const int list1ID = 7;
-
-        public const int selection1ID = 8;
-        public const int num1ID = 9;
-        public const int combo1ID = 10;
-        public const int tabID1 = 11;
-        public const int tabID2 = 12;
-        public const int buttonID1 = 13;
-        public const int buttonID2 = 14;
-        public const int textbox2ID = 15;
-        public const int textbox3ID = 16;
-        #endregion
+        private PMPHandler _handler;
+        private IPropertyManagerPageTab _geometryTab;
+        private IPropertyManagerPageTab _runtimeTab;
+        private IPropertyManagerPageGroup _frameGroup;
+        private IPropertyManagerPageGroup _pivotGroup;
+        private IPropertyManagerPageGroup _heightGroup;
+        private IPropertyManagerPageGroup _plateBraceGroup;
+        private IPropertyManagerPageGroup _runtimeGroup;
 
         public UserPMPage(SwAddin addin)
         {
-            userAddin = addin;
-            if (userAddin != null)
+            if (addin == null)
             {
-                iSwApp = (ISldWorks)userAddin.SwApp;
-                CreatePropertyManagerPage();
+                throw new ArgumentNullException(nameof(addin));
             }
-            else
+
+            _userAddin = addin;
+            _swApp = (ISldWorks)_userAddin.SwApp;
+            if (_swApp == null)
             {
-                System.Windows.Forms.MessageBox.Show("SwAddin not set.");
+                throw new InvalidOperationException("SolidWorks application reference is not available.");
             }
+
+            CreatePropertyManagerPage();
         }
 
-
-        protected void CreatePropertyManagerPage()
+        private void CreatePropertyManagerPage()
         {
             int errors = -1;
             int options = (int)swPropertyManagerPageOptions_e.swPropertyManagerOptions_OkayButton |
-                (int)swPropertyManagerPageOptions_e.swPropertyManagerOptions_CancelButton;
+                          (int)swPropertyManagerPageOptions_e.swPropertyManagerOptions_CancelButton;
 
-            handler = new PMPHandler(userAddin, this);
-            swPropertyPage = (IPropertyManagerPage2)iSwApp.CreatePropertyManagerPage("Sample PMP", options, handler, ref errors);
+            _handler = new PMPHandler(_userAddin, this);
+            swPropertyPage = (IPropertyManagerPage2)_swApp.CreatePropertyManagerPage(PageTitle, options, _handler, ref errors);
             if (swPropertyPage != null && errors == (int)swPropertyManagerPageStatus_e.swPropertyManagerPage_Okay)
             {
-                try
-                {
-                    AddControls();
-                }
-                catch (Exception e)
-                {
-                    iSwApp.SendMsgToUser2("Failed to initialize PropertyManagerPage controls: " + e.Message, (int)swMessageBoxIcon_e.swMbStop, (int)swMessageBoxBtn_e.swMbOk);
-                }
+                AddControls();
+                return;
             }
-            else
-            {
-                iSwApp.SendMsgToUser2("PropertyManagerPage creation failed. Status code: " + errors.ToString(), (int)swMessageBoxIcon_e.swMbStop, (int)swMessageBoxBtn_e.swMbOk);
-            }
+
+            _swApp.SendMsgToUser2(
+                "PropertyManagerPage creation failed. Status code: " + errors.ToString(),
+                (int)swMessageBoxIcon_e.swMbStop,
+                (int)swMessageBoxBtn_e.swMbOk);
         }
 
-
-        //Controls are displayed on the page top to bottom in the order 
-        //in which they are added to the object.
-        protected void AddControls()
+        private void AddControls()
         {
-            short controlType = -1;
-            short align = -1;
-            int options = -1;
-            bool retval;
+            swPropertyPage.SetMessage3(
+                "These defaults are loaded from the approved technical documentation baseline.",
+                (int)swPropertyManagerPageMessageVisibility.swImportantMessageBox,
+                (int)swPropertyManagerPageMessageExpanded.swMessageBoxExpand,
+                "Configuration Baseline");
 
-            //Add Message
-            retval = swPropertyPage.SetMessage3("This is a sample message, marked yellow to signify importance.",
-                                            (int)swPropertyManagerPageMessageVisibility.swImportantMessageBox,
-                                            (int)swPropertyManagerPageMessageExpanded.swMessageBoxExpand,
-                                            "Sample Important Caption");
+            _geometryTab = swPropertyPage.AddTab(GeometryTabId, "Geometry", string.Empty, 0);
+            _runtimeTab = swPropertyPage.AddTab(RuntimeTabId, "Runtime", string.Empty, 0);
 
-            // Add PropertyManager Page Tabs
-            ppagetab1 = swPropertyPage.AddTab(tabID1, "Page Tab 1", "", 0);
-            ppagetab2 = swPropertyPage.AddTab(tabID2, "Page Tab 2", "", 0);
+            int groupOptions = (int)swAddGroupBoxOptions_e.swGroupBoxOptions_Expanded |
+                               (int)swAddGroupBoxOptions_e.swGroupBoxOptions_Visible;
 
-            //Add the groups
-            options = (int)swAddGroupBoxOptions_e.swGroupBoxOptions_Expanded |
-                      (int)swAddGroupBoxOptions_e.swGroupBoxOptions_Visible;
+            _frameGroup = (IPropertyManagerPageGroup)_geometryTab.AddGroupBox(FrameGroupId, "Frame Defaults", groupOptions);
+            _pivotGroup = (IPropertyManagerPageGroup)_geometryTab.AddGroupBox(PivotGroupId, "Pivot Defaults", groupOptions);
+            _heightGroup = (IPropertyManagerPageGroup)_geometryTab.AddGroupBox(HeightGroupId, "Height Defaults", groupOptions);
+            _plateBraceGroup = (IPropertyManagerPageGroup)_geometryTab.AddGroupBox(PlateBraceGroupId, "Plate/Brace Defaults", groupOptions);
+            _runtimeGroup = (IPropertyManagerPageGroup)_runtimeTab.AddGroupBox(RuntimeGroupId, "Exports/Validation/Run Defaults", groupOptions);
 
-            group1 = (IPropertyManagerPageGroup)ppagetab1.AddGroupBox(group1ID, "Sample Group 1", options);
+            AddFrameDefaults();
+            AddPivotDefaults();
+            AddHeightDefaults();
+            AddPlateBraceDefaults();
+            AddRuntimeDefaults();
+        }
 
-            options = (int)swAddGroupBoxOptions_e.swGroupBoxOptions_Checkbox |
-                      (int)swAddGroupBoxOptions_e.swGroupBoxOptions_Visible;
+        private void AddFrameDefaults()
+        {
+            AddSettingTextbox(_frameGroup, "frame.layout.primary.memberExtentMin", "620.0", "mm");
+            AddSettingTextbox(_frameGroup, "frame.layout.primary.memberExtentMax", "980.0", "mm");
+            AddSettingTextbox(_frameGroup, "frame.layout.primary.placementTolerance", "0.5", "mm");
+            AddSettingTextbox(_frameGroup, "frame.profile.selection.allowedProfiles", "40x40x2.0_SHS,60x30x2.0_RHS", "approved baseline profile set");
+            AddSettingTextbox(_frameGroup, "frame.profile.selection.dimensionTolerance", "0.2", "mm");
+            AddSettingTextbox(_frameGroup, "frame.naming.ruleSet", "AXF_STANDARD_V1", "deterministic naming baseline");
+        }
 
-            group2 = (IPropertyManagerPageGroup)ppagetab1.AddGroupBox(group2ID, "Sample Group 2", options);
+        private void AddPivotDefaults()
+        {
+            AddSettingTextbox(_pivotGroup, "pivot.geometry.primary.axisLocationMin", "300.0", "mm");
+            AddSettingTextbox(_pivotGroup, "pivot.geometry.primary.axisLocationMax", "450.0", "mm");
+            AddSettingTextbox(_pivotGroup, "pivot.geometry.primary.alignmentTolerance", "0.25", "mm");
+            AddSettingTextbox(_pivotGroup, "pivot.hole.strategy.diameterMin", "10.5", "mm");
+            AddSettingTextbox(_pivotGroup, "pivot.hole.strategy.diameterMax", "11.0", "mm");
+            AddSettingTextbox(_pivotGroup, "pivot.hole.strategy.positionTolerance", "0.2", "mm");
+            AddSettingTextbox(_pivotGroup, "pivot.naming.mates", "AXF_STANDARD_V1", "deterministic naming baseline");
+        }
 
-            //Add the controls to group1
+        private void AddHeightDefaults()
+        {
+            AddSettingTextbox(_heightGroup, "height.supportedConfigurations.values", "680.0,730.0,780.0", "mm");
+            AddSettingTextbox(_heightGroup, "height.indexing.activation.requiredCount", "3", "count");
+            AddSettingTextbox(_heightGroup, "height.indexing.activation.strictDeterminism", "true", "boolean");
+            AddSettingTextbox(_heightGroup, "height.validation.supportedSet", "680.0,730.0,780.0", "mm");
+            AddSettingTextbox(_heightGroup, "height.validation.dimensionTolerance", "1.0", "mm");
+        }
 
-            //textbox1
-            controlType = (int)swPropertyManagerPageControlType_e.swControlType_Textbox;
-            align = (int)swPropertyManagerPageControlLeftAlign_e.swControlAlign_LeftEdge;
-            options = (int)swAddControlOptions_e.swControlOptions_Enabled |
-                      (int)swAddControlOptions_e.swControlOptions_Visible;
+        private void AddPlateBraceDefaults()
+        {
+            AddSettingTextbox(_plateBraceGroup, "plateBrace.dimensions.primary.thicknessMin", "5.0", "mm");
+            AddSettingTextbox(_plateBraceGroup, "plateBrace.dimensions.primary.thicknessMax", "8.0", "mm");
+            AddSettingTextbox(_plateBraceGroup, "plateBrace.dimensions.primary.dimensionTolerance", "0.2", "mm");
+            AddSettingTextbox(_plateBraceGroup, "plateBrace.export.dxfEligible", "true", "boolean");
+            AddSettingTextbox(_plateBraceGroup, "plateBrace.naming.ruleSet", "AXF_STANDARD_V1", "deterministic naming baseline");
+        }
 
-            textbox1 = (IPropertyManagerPageTextbox)group1.AddControl(textbox1ID, controlType, "Type Here", align, options, "This is an example textbox");
+        private void AddRuntimeDefaults()
+        {
+            AddSettingTextbox(_runtimeGroup, "exports.step.enabled", "true", "boolean");
+            AddSettingTextbox(_runtimeGroup, "exports.dxf.enabled", "true", "boolean");
+            AddSettingTextbox(_runtimeGroup, "exports.bom.enabled", "true", "boolean");
+            AddSettingTextbox(_runtimeGroup, "exports.validationReport.enabled", "true", "boolean");
+            AddSettingTextbox(_runtimeGroup, "validation.mode", "StrictRelease", "BuildOnly, FinalOutput, StrictRelease");
+            AddSettingTextbox(_runtimeGroup, "validation.stopOnCriticalFailure", "true", "boolean");
+            AddSettingTextbox(_runtimeGroup, "run.packageOutputs", "true", "boolean");
+        }
 
-            //checkbox1
-            controlType = (int)swPropertyManagerPageControlType_e.swControlType_Checkbox;
-            align = (int)swPropertyManagerPageControlLeftAlign_e.swControlAlign_LeftEdge;
-            options = (int)swAddControlOptions_e.swControlOptions_Enabled |
-                      (int)swAddControlOptions_e.swControlOptions_Visible;
+        private IPropertyManagerPageTextbox AddSettingTextbox(
+            IPropertyManagerPageGroup group,
+            string key,
+            string defaultValue,
+            string tooltip)
+        {
+            short controlType = (short)swPropertyManagerPageControlType_e.swControlType_Textbox;
+            short align = (short)swPropertyManagerPageControlLeftAlign_e.swControlAlign_LeftEdge;
+            int options = (int)swAddControlOptions_e.swControlOptions_Enabled |
+                          (int)swAddControlOptions_e.swControlOptions_Visible;
 
-            checkbox1 = (IPropertyManagerPageCheckbox)group1.AddControl(checkbox1ID, controlType, "Sample Checkbox", align, options, "This is a sample checkbox");
+            int controlId = _nextControlId++;
+            IPropertyManagerPageTextbox textbox = (IPropertyManagerPageTextbox)group.AddControl(
+                controlId,
+                controlType,
+                key,
+                align,
+                options,
+                tooltip);
 
-            //option1
-            controlType = (int)swPropertyManagerPageControlType_e.swControlType_Option;
-            align = (int)swPropertyManagerPageControlLeftAlign_e.swControlAlign_LeftEdge;
-            options = (int)swAddControlOptions_e.swControlOptions_Enabled |
-                      (int)swAddControlOptions_e.swControlOptions_Visible;
-
-            option1 = (IPropertyManagerPageOption)group1.AddControl(option1ID, controlType, "Option1", align, options, "Radio Buttons");
-
-            //option2
-            controlType = (int)swPropertyManagerPageControlType_e.swControlType_Option;
-            align = (int)swPropertyManagerPageControlLeftAlign_e.swControlAlign_LeftEdge;
-            options = (int)swAddControlOptions_e.swControlOptions_Enabled |
-                      (int)swAddControlOptions_e.swControlOptions_Visible;
-
-            option2 = (IPropertyManagerPageOption)group1.AddControl(option2ID, controlType, "Option2", align, options, "Radio Buttons");
-
-            //option3
-            controlType = (int)swPropertyManagerPageControlType_e.swControlType_Option;
-            align = (int)swPropertyManagerPageControlLeftAlign_e.swControlAlign_LeftEdge;
-            options = (int)swAddControlOptions_e.swControlOptions_Enabled |
-                      (int)swAddControlOptions_e.swControlOptions_Visible;
-
-            option3 = (IPropertyManagerPageOption)group1.AddControl(option3ID, controlType, "Option3", align, options, "Radio Buttons");
-
-            //list1
-            controlType = (int)swPropertyManagerPageControlType_e.swControlType_Listbox;
-            align = (int)swPropertyManagerPageControlLeftAlign_e.swControlAlign_LeftEdge;
-            options = (int)swAddControlOptions_e.swControlOptions_Enabled |
-                      (int)swAddControlOptions_e.swControlOptions_Visible;
-
-            list1 = (IPropertyManagerPageListbox)group1.AddControl(list1ID, controlType, "Sample Listbox", align, options, "List of selectable items");
-            if (list1 != null)
+            if (textbox != null)
             {
-                string[] items = { "One Fish", "Two Fish", "Red Fish", "Blue Fish" };
-                list1.Height = 50;
-                list1.AddItems(items);
+                textbox.Text = defaultValue;
             }
 
-            //Add controls to group2
-            //selection1
-            controlType = (int)swPropertyManagerPageControlType_e.swControlType_Selectionbox;
-            align = (int)swPropertyManagerPageControlLeftAlign_e.swControlAlign_LeftEdge;
-            options = (int)swAddControlOptions_e.swControlOptions_Enabled |
-                      (int)swAddControlOptions_e.swControlOptions_Visible;
-
-            selection1 = (IPropertyManagerPageSelectionbox)group2.AddControl(selection1ID, controlType, "Sample Selection", align, options, "Displays features selected in main view");
-            if (selection1 != null)
-            {
-                int[] filter = { (int)swSelectType_e.swSelEDGES, (int)swSelectType_e.swSelVERTICES };
-                selection1.Height = 40;
-                selection1.SetSelectionFilters(filter);
-            }
-
-            //num1
-            controlType = (int)swPropertyManagerPageControlType_e.swControlType_Numberbox;
-            align = (int)swPropertyManagerPageControlLeftAlign_e.swControlAlign_LeftEdge;
-            options = (int)swAddControlOptions_e.swControlOptions_Enabled |
-                      (int)swAddControlOptions_e.swControlOptions_Visible;
-
-            num1 = (IPropertyManagerPageNumberbox)group2.AddControl(num1ID, controlType, "Sample Numberbox", align, options, "Allows for numerical input");
-            if (num1 != null)
-            {
-                num1.Value = 50.0;
-                num1.SetRange((int)swNumberboxUnitType_e.swNumberBox_UnitlessDouble, 0.0, 100.0, 0.01, true);
-            }
-
-            //combo1
-            controlType = (int)swPropertyManagerPageControlType_e.swControlType_Combobox;
-            align = (int)swPropertyManagerPageControlLeftAlign_e.swControlAlign_LeftEdge;
-            options = (int)swAddControlOptions_e.swControlOptions_Enabled |
-                      (int)swAddControlOptions_e.swControlOptions_Visible;
-
-            combo1 = (IPropertyManagerPageCombobox)group2.AddControl(combo1ID, controlType, "Sample Combobox", align, options, "Combo list");
-            if (combo1 != null)
-            {
-                string[] items = { "One Fish", "Two Fish", "Red Fish", "Blue Fish" };
-                combo1.AddItems(items);
-                combo1.Height = 50;
-
-            }
-
-            // Button
-            controlType = (int)swPropertyManagerPageControlType_e.swControlType_Button;
-            align = (int)swPropertyManagerPageControlLeftAlign_e.swControlAlign_LeftEdge;
-            options = (int)swAddControlOptions_e.swControlOptions_Enabled |
-                    (int)swAddControlOptions_e.swControlOptions_Visible;
-
-            button1 = (IPropertyManagerPageButton)group2.AddControl2(buttonID1, controlType, "Hide", align, options, "Change the visibility of the control");
-
-            // Textbox2
-            controlType = (int)swPropertyManagerPageControlType_e.swControlType_Textbox;
-            align = (int)swPropertyManagerPageControlLeftAlign_e.swControlAlign_Indent;
-            options = (int)swAddControlOptions_e.swControlOptions_Enabled |
-                    (int)swAddControlOptions_e.swControlOptions_Visible;
-
-            textbox2 = (IPropertyManagerPageTextbox)group2.AddControl2(textbox2ID, controlType, "Sample Textbox", align, options, "Sample Textbox text");
-
-            // Button
-            controlType = (int)swPropertyManagerPageControlType_e.swControlType_Button;
-            align = (int)swPropertyManagerPageControlLeftAlign_e.swControlAlign_LeftEdge;
-            options = (int)swAddControlOptions_e.swControlOptions_Enabled |
-                    (int)swAddControlOptions_e.swControlOptions_Visible;
-
-            button2 = (IPropertyManagerPageButton)group2.AddControl2(buttonID2, controlType, "Disable", align, options, "Disable the control");
-
-            // Textbox3
-            controlType = (int)swPropertyManagerPageControlType_e.swControlType_Textbox;
-            align = (int)swPropertyManagerPageControlLeftAlign_e.swControlAlign_Indent;
-            options = (int)swAddControlOptions_e.swControlOptions_Enabled |
-                      (int)swAddControlOptions_e.swControlOptions_Visible;
-
-            textbox3 = (IPropertyManagerPageTextbox)group2.AddControl2(textbox3ID, controlType, "Another sample Textbox", align, options, "Second Sample Textbox text");
+            return textbox;
         }
 
         public void Show()

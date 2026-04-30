@@ -319,6 +319,10 @@ namespace AxionFrame.Tests
             AssertEqual(2, output.AllowedProfiles.Count, "Unexpected frame profile count.");
             AssertEqual("40x40x2.0_SHS", output.AllowedProfiles[0], "Unexpected first baseline profile.");
             AssertEqual("60x30x2.0_RHS", output.AllowedProfiles[1], "Unexpected second baseline profile.");
+            AssertEqual("40x40x2.0_SHS", output.SelectedProfileCode, "Unexpected selected frame profile.");
+            AssertFalse(output.GeometryCreated, "Frame geometry should be disabled in non-SolidWorks test runtime.");
+            AssertEqual(string.Empty, output.ActiveDocumentName, "Active SolidWorks document name should be empty when geometry is disabled.");
+            AssertEqual("Frame geometry executor is not configured for this runtime.", output.GeometryExecutionNote, "Unexpected geometry execution note.");
 
             AssertEqual(3, output.TracePoints.Count, "Unexpected frame trace-point count.");
             AssertEqual("frame.layout", output.TracePoints[0], "Unexpected frame layout trace point.");
@@ -342,6 +346,10 @@ namespace AxionFrame.Tests
             AssertEqual(firstOutput.PlacementTolerance, secondOutput.PlacementTolerance, "Frame placement tolerance should remain stable across repeated runs.");
             AssertEqual(firstOutput.ProfileDimensionTolerance, secondOutput.ProfileDimensionTolerance, "Frame profile tolerance should remain stable across repeated runs.");
             AssertEqual(firstOutput.NamingRuleSet, secondOutput.NamingRuleSet, "Frame naming rule-set should remain stable across repeated runs.");
+            AssertEqual(firstOutput.SelectedProfileCode, secondOutput.SelectedProfileCode, "Selected frame profile should remain stable across repeated runs.");
+            AssertEqual(firstOutput.GeometryCreated, secondOutput.GeometryCreated, "Frame geometry enabled flag should remain stable across repeated runs.");
+            AssertEqual(firstOutput.ActiveDocumentName, secondOutput.ActiveDocumentName, "Frame geometry active-document output should remain stable across repeated runs.");
+            AssertEqual(firstOutput.GeometryExecutionNote, secondOutput.GeometryExecutionNote, "Frame geometry execution note should remain stable across repeated runs.");
 
             for (int i = 0; i < firstOutput.FeatureNames.Count; i++)
             {
@@ -424,8 +432,12 @@ namespace AxionFrame.Tests
                 AssertTrue(generatePartsStage.Details.IndexOf("framePlacementTolerance=0.5", StringComparison.Ordinal) >= 0, "Generate-parts stage details should include frame placement tolerance.");
                 AssertTrue(generatePartsStage.Details.IndexOf("frameProfileTolerance=0.2", StringComparison.Ordinal) >= 0, "Generate-parts stage details should include frame profile tolerance.");
                 AssertTrue(generatePartsStage.Details.IndexOf("frameProfiles=40x40x2.0_SHS|60x30x2.0_RHS", StringComparison.Ordinal) >= 0, "Generate-parts stage details should include baseline frame profiles.");
+                AssertTrue(generatePartsStage.Details.IndexOf("frameSelectedProfile=40x40x2.0_SHS", StringComparison.Ordinal) >= 0, "Generate-parts stage details should include deterministic frame-profile selection.");
                 AssertTrue(generatePartsStage.Details.IndexOf("frameNamingRuleSet=AXF_STANDARD_V1", StringComparison.Ordinal) >= 0, "Generate-parts stage details should include frame naming rule-set.");
                 AssertTrue(generatePartsStage.Details.IndexOf("frameTracePoints=frame.layout|frame.members|traceability.naming.frame", StringComparison.Ordinal) >= 0, "Generate-parts stage details should include frame trace points.");
+                AssertTrue(generatePartsStage.Details.IndexOf("frameGeometryCreated=false", StringComparison.Ordinal) >= 0, "Generate-parts stage details should include frame geometry generation status.");
+                AssertTrue(generatePartsStage.Details.IndexOf("frameGeometryDoc=<null>", StringComparison.Ordinal) >= 0, "Generate-parts stage details should include frame geometry document placeholder.");
+                AssertTrue(generatePartsStage.Details.IndexOf("frameGeometryNote=Frame geometry executor is not configured for this runtime.", StringComparison.Ordinal) >= 0, "Generate-parts stage details should include frame geometry execution note.");
             }
             finally
             {

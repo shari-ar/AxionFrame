@@ -160,6 +160,7 @@
     <Compile Include="..\Modules\PivotModule.cs">
       <Link>Modules\PivotModule.cs</Link>
     </Compile>
+    <Compile Include="Geometry\SolidWorksFrameGeometryExecutor.cs" />
     <Compile Include="Events\DocumentEventHandling.cs" />
     <Compile Include="UI\SettingsHandler.cs" />
     <Compile Include="SwAddin.cs">

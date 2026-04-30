@@ -133,9 +133,13 @@ namespace AxionFrame
                         details.Append("; framePlacementTolerance=").Append(FormatDecimalToken(frameBuildOutput.PlacementTolerance));
                         details.Append("; frameProfileTolerance=").Append(FormatDecimalToken(frameBuildOutput.ProfileDimensionTolerance));
                         details.Append("; frameProfiles=").Append(JoinWithPipe(frameBuildOutput.AllowedProfiles));
+                        details.Append("; frameSelectedProfile=").Append(frameBuildOutput.SelectedProfileCode);
                         details.Append("; frameNamingRuleSet=").Append(frameBuildOutput.NamingRuleSet);
                         details.Append("; frameTracePoints=").Append(JoinWithPipe(frameBuildOutput.TracePoints));
                         details.Append("; frameFeatureCount=").Append(frameBuildOutput.FeatureNames.Count.ToString(CultureInfo.InvariantCulture));
+                        details.Append("; frameGeometryCreated=").Append(frameBuildOutput.GeometryCreated ? "true" : "false");
+                        details.Append("; frameGeometryDoc=").Append(string.IsNullOrWhiteSpace(frameBuildOutput.ActiveDocumentName) ? NullValueToken : frameBuildOutput.ActiveDocumentName);
+                        details.Append("; frameGeometryNote=").Append(string.IsNullOrWhiteSpace(frameBuildOutput.GeometryExecutionNote) ? NullValueToken : frameBuildOutput.GeometryExecutionNote);
                     });
 
                 ExecuteStage(

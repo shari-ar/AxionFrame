@@ -1,8 +1,86 @@
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 
 namespace AxionFrame
 {
+    public sealed class FrameProfileDefinition
+    {
+        public FrameProfileDefinition(string profileCode, decimal widthMillimeters, decimal heightMillimeters, decimal wallThicknessMillimeters, string profileFamily)
+        {
+            ProfileCode = profileCode ?? string.Empty;
+            WidthMillimeters = widthMillimeters;
+            HeightMillimeters = heightMillimeters;
+            WallThicknessMillimeters = wallThicknessMillimeters;
+            ProfileFamily = profileFamily ?? string.Empty;
+        }
+
+        public string ProfileCode { get; private set; }
+        public decimal WidthMillimeters { get; private set; }
+        public decimal HeightMillimeters { get; private set; }
+        public decimal WallThicknessMillimeters { get; private set; }
+        public string ProfileFamily { get; private set; }
+    }
+
+    public sealed class FrameGeometryRequest
+    {
+        public FrameGeometryRequest(
+            string layoutFeatureName,
+            string profileFeatureName,
+            decimal memberExtentMin,
+            decimal memberExtentMax,
+            decimal placementTolerance,
+            decimal profileDimensionTolerance,
+            string selectedProfileCode,
+            FrameProfileDefinition selectedProfile,
+            string namingRuleSet)
+        {
+            LayoutFeatureName = layoutFeatureName ?? string.Empty;
+            ProfileFeatureName = profileFeatureName ?? string.Empty;
+            MemberExtentMin = memberExtentMin;
+            MemberExtentMax = memberExtentMax;
+            PlacementTolerance = placementTolerance;
+            ProfileDimensionTolerance = profileDimensionTolerance;
+            SelectedProfileCode = selectedProfileCode ?? string.Empty;
+            SelectedProfile = selectedProfile ?? new FrameProfileDefinition(string.Empty, 0m, 0m, 0m, string.Empty);
+            NamingRuleSet = namingRuleSet ?? string.Empty;
+        }
+
+        public string LayoutFeatureName { get; private set; }
+        public string ProfileFeatureName { get; private set; }
+        public decimal MemberExtentMin { get; private set; }
+        public decimal MemberExtentMax { get; private set; }
+        public decimal PlacementTolerance { get; private set; }
+        public decimal ProfileDimensionTolerance { get; private set; }
+        public string SelectedProfileCode { get; private set; }
+        public FrameProfileDefinition SelectedProfile { get; private set; }
+        public string NamingRuleSet { get; private set; }
+    }
+
+    public sealed class FrameGeometryResult
+    {
+        public FrameGeometryResult(bool geometryCreated, string activeDocumentName, string executionNote)
+        {
+            GeometryCreated = geometryCreated;
+            ActiveDocumentName = activeDocumentName ?? string.Empty;
+            ExecutionNote = executionNote ?? string.Empty;
+        }
+
+        public bool GeometryCreated { get; private set; }
+        public string ActiveDocumentName { get; private set; }
+        public string ExecutionNote { get; private set; }
+
+        public static FrameGeometryResult NotRequested(string note)
+        {
+            return new FrameGeometryResult(false, string.Empty, note ?? string.Empty);
+        }
+    }
+
+    public interface IFrameGeometryExecutor
+    {
+        FrameGeometryResult Generate(FrameGeometryRequest request);
+    }
+
     public sealed class FrameBuildOutput
     {
         public FrameBuildOutput(
@@ -14,6 +92,35 @@ namespace AxionFrame
             decimal profileDimensionTolerance,
             string namingRuleSet,
             IList<string> tracePoints)
+            : this(
+                featureNames,
+                memberExtentMin,
+                memberExtentMax,
+                placementTolerance,
+                allowedProfiles,
+                profileDimensionTolerance,
+                namingRuleSet,
+                tracePoints,
+                string.Empty,
+                false,
+                string.Empty,
+                string.Empty)
+        {
+        }
+
+        public FrameBuildOutput(
+            IList<string> featureNames,
+            decimal memberExtentMin,
+            decimal memberExtentMax,
+            decimal placementTolerance,
+            IList<string> allowedProfiles,
+            decimal profileDimensionTolerance,
+            string namingRuleSet,
+            IList<string> tracePoints,
+            string selectedProfileCode,
+            bool geometryCreated,
+            string activeDocumentName,
+            string geometryExecutionNote)
         {
             FeatureNames = featureNames ?? new List<string>();
             MemberExtentMin = memberExtentMin;
@@ -23,6 +130,10 @@ namespace AxionFrame
             ProfileDimensionTolerance = profileDimensionTolerance;
             NamingRuleSet = namingRuleSet ?? string.Empty;
             TracePoints = tracePoints ?? new List<string>();
+            SelectedProfileCode = selectedProfileCode ?? string.Empty;
+            GeometryCreated = geometryCreated;
+            ActiveDocumentName = activeDocumentName ?? string.Empty;
+            GeometryExecutionNote = geometryExecutionNote ?? string.Empty;
         }
 
         public IList<string> FeatureNames { get; private set; }
@@ -33,6 +144,10 @@ namespace AxionFrame
         public decimal ProfileDimensionTolerance { get; private set; }
         public string NamingRuleSet { get; private set; }
         public IList<string> TracePoints { get; private set; }
+        public string SelectedProfileCode { get; private set; }
+        public bool GeometryCreated { get; private set; }
+        public string ActiveDocumentName { get; private set; }
+        public string GeometryExecutionNote { get; private set; }
     }
 
     public sealed class FrameModule
@@ -59,13 +174,19 @@ namespace AxionFrame
         };
 
         private readonly DeterministicNamingService _naming;
+        private readonly IFrameGeometryExecutor _geometryExecutor;
 
         public FrameModule()
-            : this(new DeterministicNamingService())
+            : this(new DeterministicNamingService(), null)
         {
         }
 
         public FrameModule(DeterministicNamingService naming)
+            : this(naming, null)
+        {
+        }
+
+        public FrameModule(DeterministicNamingService naming, IFrameGeometryExecutor geometryExecutor)
         {
             if (naming == null)
             {
@@ -73,6 +194,7 @@ namespace AxionFrame
             }
 
             _naming = naming;
+            _geometryExecutor = geometryExecutor;
         }
 
         public string GetLayoutPrimaryFeatureName()
@@ -130,6 +252,8 @@ namespace AxionFrame
 
             // Frame rules are already schema-validated; this guard keeps module behavior constrained to the documented baseline profile family.
             ValidateAllowedProfiles(allowedProfiles);
+            string selectedProfileCode = SelectActiveProfile(allowedProfiles);
+            FrameProfileDefinition selectedProfile = ParseProfileDefinition(selectedProfileCode);
 
             List<string> featureNames = new List<string>
             {
@@ -144,6 +268,17 @@ namespace AxionFrame
                 ReportTraceFrameNaming
             };
 
+            FrameGeometryResult geometryResult = GenerateFrameGeometry(
+                featureNames[0],
+                featureNames[1],
+                memberExtentMin,
+                memberExtentMax,
+                placementTolerance,
+                profileDimensionTolerance,
+                selectedProfileCode,
+                selectedProfile,
+                namingRuleSet);
+
             return new FrameBuildOutput(
                 featureNames,
                 memberExtentMin,
@@ -152,7 +287,11 @@ namespace AxionFrame
                 new List<string>(allowedProfiles),
                 profileDimensionTolerance,
                 namingRuleSet,
-                tracePoints);
+                tracePoints,
+                selectedProfileCode,
+                geometryResult.GeometryCreated,
+                geometryResult.ActiveDocumentName,
+                geometryResult.ExecutionNote);
         }
 
         private static decimal GetRequiredDecimal(IDictionary<string, object> normalizedConfig, string key)
@@ -232,6 +371,107 @@ namespace AxionFrame
             }
 
             return false;
+        }
+
+        private FrameGeometryResult GenerateFrameGeometry(
+            string layoutFeatureName,
+            string profileFeatureName,
+            decimal memberExtentMin,
+            decimal memberExtentMax,
+            decimal placementTolerance,
+            decimal profileDimensionTolerance,
+            string selectedProfileCode,
+            FrameProfileDefinition selectedProfile,
+            string namingRuleSet)
+        {
+            if (_geometryExecutor == null)
+            {
+                return FrameGeometryResult.NotRequested("Frame geometry executor is not configured for this runtime.");
+            }
+
+            FrameGeometryRequest request = new FrameGeometryRequest(
+                layoutFeatureName,
+                profileFeatureName,
+                memberExtentMin,
+                memberExtentMax,
+                placementTolerance,
+                profileDimensionTolerance,
+                selectedProfileCode,
+                selectedProfile,
+                namingRuleSet);
+
+            try
+            {
+                FrameGeometryResult result = _geometryExecutor.Generate(request);
+                if (result == null)
+                {
+                    throw new InvalidOperationException("Frame geometry executor returned a null result.");
+                }
+
+                return result;
+            }
+            catch (Exception ex)
+            {
+                throw new InvalidOperationException("Frame geometry generation failed for S3.2 baseline behavior: " + ex.Message, ex);
+            }
+        }
+
+        private static string SelectActiveProfile(IList<string> configuredProfiles)
+        {
+            if (configuredProfiles == null || configuredProfiles.Count == 0)
+            {
+                throw new InvalidOperationException("Frame allowed profile set cannot be empty.");
+            }
+
+            return configuredProfiles[0];
+        }
+
+        private static FrameProfileDefinition ParseProfileDefinition(string profileCode)
+        {
+            if (string.IsNullOrWhiteSpace(profileCode))
+            {
+                throw new InvalidOperationException("Selected frame profile is empty.");
+            }
+
+            string[] profileAndFamily = profileCode.Split(new[] { '_' }, StringSplitOptions.RemoveEmptyEntries);
+            if (profileAndFamily.Length != 2)
+            {
+                throw new InvalidOperationException("Frame profile format is invalid: " + profileCode + ".");
+            }
+
+            string[] dimensions = profileAndFamily[0].Split(new[] { 'x', 'X' }, StringSplitOptions.RemoveEmptyEntries);
+            if (dimensions.Length != 3)
+            {
+                throw new InvalidOperationException("Frame profile dimensions are invalid: " + profileCode + ".");
+            }
+
+            decimal width = ParsePositiveDecimal(dimensions[0], "width", profileCode);
+            decimal height = ParsePositiveDecimal(dimensions[1], "height", profileCode);
+            decimal wallThickness = ParsePositiveDecimal(dimensions[2], "wall thickness", profileCode);
+
+            decimal halfSmallestDimension = Math.Min(width, height) / 2m;
+            if (wallThickness >= halfSmallestDimension)
+            {
+                throw new InvalidOperationException("Frame profile wall thickness is not physically valid for profile: " + profileCode + ".");
+            }
+
+            return new FrameProfileDefinition(profileCode, width, height, wallThickness, profileAndFamily[1]);
+        }
+
+        private static decimal ParsePositiveDecimal(string value, string tokenName, string profileCode)
+        {
+            decimal parsedValue;
+            if (!decimal.TryParse(value, NumberStyles.Number, CultureInfo.InvariantCulture, out parsedValue))
+            {
+                throw new InvalidOperationException("Frame profile " + tokenName + " token is invalid for profile: " + profileCode + ".");
+            }
+
+            if (parsedValue <= 0m)
+            {
+                throw new InvalidOperationException("Frame profile " + tokenName + " must be greater than zero for profile: " + profileCode + ".");
+            }
+
+            return parsedValue;
         }
     }
 }

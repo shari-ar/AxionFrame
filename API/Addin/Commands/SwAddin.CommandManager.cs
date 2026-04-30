@@ -218,7 +218,14 @@ namespace AxionFrame
 
             try
             {
-                BuildWorkflowEngine workflowEngine = new BuildWorkflowEngine();
+                DeterministicNamingService naming = new DeterministicNamingService();
+                FrameModule frameModule = new FrameModule(naming, new SolidWorksFrameGeometryExecutor(iSwApp));
+                BuildWorkflowEngine workflowEngine = new BuildWorkflowEngine(
+                    new FeatureManager(),
+                    frameModule,
+                    new PivotModule(naming),
+                    new HeightAdjustModule(naming),
+                    new PlateBraceModule(naming));
                 BuildExecutionResult result = workflowEngine.ExecuteBuild(null, null);
 
                 int icon = result.IsSuccessful ? (int)swMessageBoxIcon_e.swMbInformation : (int)swMessageBoxIcon_e.swMbStop;

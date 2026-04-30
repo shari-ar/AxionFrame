@@ -3,6 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
+using System.Reflection;
 using System.Web.Script.Serialization;
 
 namespace AxionFrame
@@ -363,6 +364,25 @@ namespace AxionFrame
 
             if (!File.Exists(configPath))
             {
+                string embeddedConfigJson = TryReadEmbeddedGlobalParamsJson();
+                if (!string.IsNullOrWhiteSpace(embeddedConfigJson))
+                {
+                    messages.Add(CreateMessage(
+                        ValidatorGroup.Schema,
+                        ValidationSeverity.Info,
+                        false,
+                        "CFG-SRC-006",
+                        "VAL-CFG-SRC-EMBEDDED",
+                        "configuration.sourcePath",
+                        string.Empty,
+                        "Configuration file not found; embedded baseline configuration is applied.",
+                        "Existing JSON file or embedded baseline resource.",
+                        configPath,
+                        "Provide Config/GlobalParams.json or keep using embedded baseline values."));
+
+                    return LoadFlatConfigurationFromJson(embeddedConfigJson, messages);
+                }
+
                 messages.Add(CreateMessage(
                     ValidatorGroup.Schema,
                     ValidationSeverity.Warning,
@@ -396,6 +416,12 @@ namespace AxionFrame
                 return flattened;
             }
 
+            return LoadFlatConfigurationFromJson(jsonContent, messages);
+        }
+
+        private static Dictionary<string, object> LoadFlatConfigurationFromJson(string jsonContent, IList<ValidationMessage> messages)
+        {
+            Dictionary<string, object> flattened = new Dictionary<string, object>(StringComparer.Ordinal);
             object deserializedRoot;
             try
             {
@@ -439,6 +465,49 @@ namespace AxionFrame
 
             FlattenDictionary(rootDictionary, string.Empty, flattened);
             return flattened;
+        }
+
+        private static string TryReadEmbeddedGlobalParamsJson()
+        {
+            Assembly[] assembliesToProbe =
+            {
+                Assembly.GetEntryAssembly(),
+                Assembly.GetExecutingAssembly()
+            };
+
+            for (int i = 0; i < assembliesToProbe.Length; i++)
+            {
+                Assembly assembly = assembliesToProbe[i];
+                if (assembly == null)
+                {
+                    continue;
+                }
+
+                string[] resourceNames = assembly.GetManifestResourceNames();
+                for (int j = 0; j < resourceNames.Length; j++)
+                {
+                    string resourceName = resourceNames[j];
+                    if (!resourceName.EndsWith(".Config.GlobalParams.json", StringComparison.Ordinal))
+                    {
+                        continue;
+                    }
+
+                    using (Stream stream = assembly.GetManifestResourceStream(resourceName))
+                    {
+                        if (stream == null)
+                        {
+                            continue;
+                        }
+
+                        using (StreamReader reader = new StreamReader(stream))
+                        {
+                            return reader.ReadToEnd();
+                        }
+                    }
+                }
+            }
+
+            return string.Empty;
         }
 
         private static void FlattenDictionary(

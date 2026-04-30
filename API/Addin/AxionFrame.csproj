@@ -185,6 +185,10 @@
     <EmbeddedResource Include="Resources\AddinIcon.bmp" />
   </ItemGroup>
   <ItemGroup>
+    <EmbeddedResource Include="..\..\Config\GlobalParams.json">
+      <Link>Config\GlobalParams.json</Link>
+      <LogicalName>AxionFrame.Config.GlobalParams.json</LogicalName>
+    </EmbeddedResource>
     <BootstrapperPackage Include="Microsoft.Net.Framework.3.5.SP1">
       <Visible>False</Visible>
       <ProductName>.NET Framework 3.5 SP1</ProductName>

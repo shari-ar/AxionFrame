@@ -5,7 +5,7 @@ using System;
 
 namespace AxionFrame
 {
-    public sealed class UserPMPage
+    public sealed class SettingsPage
     {
         private const string PageTitle = "AxionFrame Settings";
         private const int GeometryTabId = 11;
@@ -21,7 +21,7 @@ namespace AxionFrame
         private readonly SwAddin _userAddin;
 
         public IPropertyManagerPage2 swPropertyPage = null;
-        private PMPHandler _handler;
+        private SettingsHandler _handler;
         private IPropertyManagerPageTab _geometryTab;
         private IPropertyManagerPageTab _runtimeTab;
         private IPropertyManagerPageGroup _frameGroup;
@@ -30,7 +30,7 @@ namespace AxionFrame
         private IPropertyManagerPageGroup _plateBraceGroup;
         private IPropertyManagerPageGroup _runtimeGroup;
 
-        public UserPMPage(SwAddin addin)
+        public SettingsPage(SwAddin addin)
         {
             if (addin == null)
             {
@@ -53,7 +53,7 @@ namespace AxionFrame
             int options = (int)swPropertyManagerPageOptions_e.swPropertyManagerOptions_OkayButton |
                           (int)swPropertyManagerPageOptions_e.swPropertyManagerOptions_CancelButton;
 
-            _handler = new PMPHandler(_userAddin, this);
+            _handler = new SettingsHandler(_userAddin, this);
             swPropertyPage = (IPropertyManagerPage2)_swApp.CreatePropertyManagerPage(PageTitle, options, _handler, ref errors);
             if (swPropertyPage != null && errors == (int)swPropertyManagerPageStatus_e.swPropertyManagerPage_Okay)
             {

@@ -17,7 +17,7 @@ namespace AxionFrame
             if (iBmp == null)
                 iBmp = new BitmapHandler();
             Assembly thisAssembly;
-            int cmdIndexPmp, cmdIndexBuild, cmdIndexOutput;
+            int cmdIndexSettings, cmdIndexBuild, cmdIndexOutput;
             string Title = "AxionFrame", ToolTip = "AxionFrame";
 
 
@@ -66,7 +66,7 @@ namespace AxionFrame
             cmdGroup.IconList = icons;
 
             int menuToolbarOption = (int)(swCommandItemType_e.swMenuItem | swCommandItemType_e.swToolbarItem);
-            cmdIndexPmp = cmdGroup.AddCommandItem2("PMP", -1, "Display parameter settings", "PMP", 2, "ShowPMP", "EnablePMP", mainItemID1, menuToolbarOption);
+            cmdIndexSettings = cmdGroup.AddCommandItem2("Settings", -1, "Display parameter settings", "Settings", 2, "ShowSettings", "EnableSettings", mainItemID1, menuToolbarOption);
             cmdIndexBuild = cmdGroup.AddCommandItem2("Build", -1, "Run Build workflow", "Build", 0, "RunBuildCommand", "EnableBuildCommand", mainItemID2, menuToolbarOption);
             cmdIndexOutput = cmdGroup.AddCommandItem2("Output", -1, "Run Final Output workflow", "Output", 1, "RunOutputCommand", "EnableOutputCommand", mainItemID3, menuToolbarOption);
 
@@ -105,7 +105,7 @@ namespace AxionFrame
                     int[] cmdIDs = new int[3];
                     int[] TextType = new int[3];
 
-                    cmdIDs[0] = cmdGroup.get_CommandID(cmdIndexPmp);
+                    cmdIDs[0] = cmdGroup.get_CommandID(cmdIndexSettings);
                     TextType[0] = (int)swCommandTabButtonTextDisplay_e.swCommandTabButton_TextBelow;
 
                     cmdIDs[1] = cmdGroup.get_CommandID(cmdIndexBuild);
@@ -194,13 +194,13 @@ namespace AxionFrame
             return true;
         }
 
-        public Boolean AddPMP()
+        public Boolean AddSettings()
         {
-            ppage = new UserPMPage(this);
+            ppage = new SettingsPage(this);
             return true;
         }
 
-        public Boolean RemovePMP()
+        public Boolean RemoveSettings()
         {
             ppage = null;
             return true;
@@ -319,13 +319,13 @@ namespace AxionFrame
                 return 1;
         }
 
-        public void ShowPMP()
+        public void ShowSettings()
         {
             if (ppage != null)
                 ppage.Show();
         }
 
-        public int EnablePMP()
+        public int EnableSettings()
         {
             if (iSwApp.ActiveDoc != null)
                 return 1;

@@ -161,14 +161,14 @@
       <Link>Modules\PivotModule.cs</Link>
     </Compile>
     <Compile Include="Events\DocumentEventHandling.cs" />
-    <Compile Include="UI\PMPHandler.cs" />
+    <Compile Include="UI\SettingsHandler.cs" />
     <Compile Include="SwAddin.cs">
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="Registration\SwAddin.Registration.cs" />
     <Compile Include="Commands\SwAddin.CommandManager.cs" />
     <Compile Include="Events\SwAddin.Events.cs" />
-    <Compile Include="UI\UserPMPage.cs" />
+    <Compile Include="UI\SettingsPage.cs" />
     <EmbeddedResource Include="Resources\mainicon_20.png" />
     <EmbeddedResource Include="Resources\mainicon_32.png" />
     <EmbeddedResource Include="Resources\mainicon_40.png" />

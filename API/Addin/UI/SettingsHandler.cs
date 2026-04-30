@@ -4,11 +4,11 @@ using System;
 
 namespace AxionFrame
 {
-    public sealed class PMPHandler : IPropertyManagerPage2Handler9
+    public sealed class SettingsHandler : IPropertyManagerPage2Handler9
     {
-        private readonly UserPMPage _page;
+        private readonly SettingsPage _page;
 
-        public PMPHandler(SwAddin addin, UserPMPage page)
+        public SettingsHandler(SwAddin addin, SettingsPage page)
         {
             if (addin == null)
             {

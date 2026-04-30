@@ -40,8 +40,8 @@ namespace AxionFrame
         SolidWorks.Interop.sldworks.SldWorks SwEventPtr = null;
         #endregion
 
-        #region Property Manager Variables
-        public UserPMPage ppage = null;
+        #region Settings Page Variables
+        public SettingsPage ppage = null;
         #endregion
 
         // Public Properties
@@ -87,7 +87,7 @@ namespace AxionFrame
             #endregion
 
             #region Setup Sample Property Manager
-            AddPMP();
+            AddSettings();
             #endregion
 
             return true;
@@ -96,7 +96,7 @@ namespace AxionFrame
         public bool DisconnectFromSW()
         {
             RemoveCommandMgr();
-            RemovePMP();
+            RemoveSettings();
             DetachEventHandlers();
 
             if (iCmdMgr != null)

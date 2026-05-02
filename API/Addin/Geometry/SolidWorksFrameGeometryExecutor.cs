@@ -1,5 +1,4 @@
 using SolidWorks.Interop.sldworks;
-using SolidWorks.Interop.swconst;
 using System;
 
 namespace AxionFrame
@@ -7,14 +6,8 @@ namespace AxionFrame
     public sealed class SolidWorksFrameGeometryExecutor : IFrameGeometryExecutor
     {
         private const double MillimetersToMeters = 0.001d;
-        private const decimal MinimumFeatureDepthMillimeters = 0.1m;
-
-        private static readonly string[] SketchPlaneCandidates =
-        {
-            "Front Plane",
-            "Top Plane",
-            "Right Plane"
-        };
+        private const double ZWidthMillimeters = 700.0d;
+        private const double ZHeightMillimeters = 1000.0d;
 
         private readonly ISldWorks _swApp;
 
@@ -35,140 +28,71 @@ namespace AxionFrame
                 throw new ArgumentNullException(nameof(request));
             }
 
-            string partTemplatePath = _swApp.GetUserPreferenceStringValue((int)swUserPreferenceStringValue_e.swDefaultTemplatePart);
-            if (string.IsNullOrWhiteSpace(partTemplatePath))
+            IModelDoc2 part = _swApp.ActiveDoc as IModelDoc2;
+            if (part == null)
             {
-                throw new InvalidOperationException("Default SolidWorks part template is not configured.");
+                throw new InvalidOperationException("No active SolidWorks document is available.");
             }
 
-            IModelDoc2 model = (IModelDoc2)_swApp.NewDocument(partTemplatePath, (int)swDwgPaperSizes_e.swDwgPaperA2size, 0.0, 0.0);
-            if (model == null)
+            if (!SelectRightPlane(part))
             {
-                throw new InvalidOperationException("SolidWorks failed to create a new part document for frame geometry.");
+                throw new InvalidOperationException("Right Plane could not be selected.");
             }
 
-            CreateExtrudedRectangleFeature(
-                model,
-                request.LayoutFeatureName,
-                request.MemberExtentMax,
-                request.MemberExtentMin,
-                Max(request.PlacementTolerance, MinimumFeatureDepthMillimeters));
+            part.SketchManager.InsertSketch(true);
+            part.ClearSelection2(true);
 
-            CreateExtrudedRectangleFeature(
-                model,
-                request.ProfileFeatureName,
-                request.SelectedProfile.WidthMillimeters,
-                request.SelectedProfile.HeightMillimeters,
-                request.MemberExtentMax);
+            double halfWidth = ToMeters(ZWidthMillimeters / 2.0d);
+            double halfHeight = ToMeters(ZHeightMillimeters / 2.0d);
 
-            model.ClearSelection2(true);
-            model.ForceRebuild3(false);
+            double leftX = -halfWidth;
+            double rightX = halfWidth;
+            double topY = halfHeight;
+            double bottomY = -halfHeight;
+            SketchSegment topSegment = part.SketchManager.CreateLine(leftX, topY, 0.0d, rightX, topY, 0.0d) as SketchSegment;
+            SketchSegment diagonalSegment = part.SketchManager.CreateLine(rightX, topY, 0.0d, leftX, bottomY, 0.0d) as SketchSegment;
+            SketchSegment bottomSegment = part.SketchManager.CreateLine(leftX, bottomY, 0.0d, rightX, bottomY, 0.0d) as SketchSegment;
 
-            string note = "Frame layout/profile geometry generated using profile " + request.SelectedProfileCode + ".";
-            return new FrameGeometryResult(true, model.GetTitle(), note);
+            if (topSegment == null || diagonalSegment == null || bottomSegment == null)
+            {
+                throw new InvalidOperationException("Failed to create primary Z-frame sketch segments.");
+            }
+
+            double yAtOneThird = topY + (bottomY - topY) / 3.0d;
+            double yAtTwoThird = topY + 2.0d * (bottomY - topY) / 3.0d;
+            double diagonalDx = leftX - rightX;
+            double diagonalDy = bottomY - topY;
+
+            double firstSplitX = rightX + (diagonalDx / diagonalDy) * (yAtOneThird - topY);
+            double secondSplitX = rightX + (diagonalDx / diagonalDy) * (yAtTwoThird - topY);
+
+            SketchSegment braceTop = part.SketchManager.CreateLine(leftX, topY, 0.0d, firstSplitX, yAtOneThird, 0.0d) as SketchSegment;
+            SketchSegment braceBottom = part.SketchManager.CreateLine(rightX, bottomY, 0.0d, secondSplitX, yAtTwoThird, 0.0d) as SketchSegment;
+
+            if (braceTop == null || braceBottom == null)
+            {
+                throw new InvalidOperationException("Failed to create brace segments to split the Z center line.");
+            }
+
+            part.ClearSelection2(true);
+            part.SketchManager.InsertSketch(true);
+            part.ForceRebuild3(false);
+
+            string note =
+                "Z-frame sketch generated on Right Plane: width=700mm, height=1000mm, centered at origin; " +
+                "braces connect end points to diagonal one-third split points; profile context=" + request.SelectedProfileCode + ".";
+            return new FrameGeometryResult(true, part.GetTitle(), note);
         }
 
-        private static void CreateExtrudedRectangleFeature(IModelDoc2 model, string featureName, decimal widthMillimeters, decimal heightMillimeters, decimal depthMillimeters)
+        private static bool SelectRightPlane(IModelDoc2 part)
         {
-            if (model == null)
-            {
-                throw new ArgumentNullException(nameof(model));
-            }
-
-            if (string.IsNullOrWhiteSpace(featureName))
-            {
-                throw new InvalidOperationException("Target feature name cannot be null or whitespace.");
-            }
-
-            if (widthMillimeters <= 0m || heightMillimeters <= 0m || depthMillimeters <= 0m)
-            {
-                throw new InvalidOperationException("Frame geometry dimensions must be greater than zero.");
-            }
-
-            model.ClearSelection2(true);
-            if (!TrySelectSketchPlane(model))
-            {
-                throw new InvalidOperationException("Unable to select a sketch plane for frame feature generation.");
-            }
-
-            model.InsertSketch2(true);
-
-            double halfWidth = ToMeters(widthMillimeters) / 2.0d;
-            double halfHeight = ToMeters(heightMillimeters) / 2.0d;
-            model.SketchRectangle(-halfWidth, -halfHeight, 0.0d, halfWidth, halfHeight, 0.0d, false);
-
-            model.InsertSketch2(true);
-
-            IFeatureManager featureManager = model.FeatureManager;
-            object featureObject = featureManager.FeatureExtrusion(
-                true,
-                false,
-                false,
-                (int)swEndConditions_e.swEndCondBlind,
-                (int)swEndConditions_e.swEndCondBlind,
-                ToMeters(depthMillimeters),
-                0.0d,
-                false,
-                false,
-                false,
-                false,
-                0.0d,
-                0.0d,
-                false,
-                false,
-                false,
-                false,
-                true,
-                false,
-                false);
-            IFeature feature = featureObject as IFeature;
-
-            if (feature == null)
-            {
-                throw new InvalidOperationException("SolidWorks failed to create feature '" + featureName + "'.");
-            }
-
-            feature.Name = featureName;
+            part.ClearSelection2(true);
+            return part.Extension.SelectByID2("Right Plane", "PLANE", 0.0d, 0.0d, 0.0d, false, 0, null, 0);
         }
 
-        private static bool TrySelectSketchPlane(IModelDoc2 model)
+        private static double ToMeters(double millimeters)
         {
-            IModelDocExtension extension = model.Extension;
-            for (int i = 0; i < SketchPlaneCandidates.Length; i++)
-            {
-                bool selected = extension.SelectByID2(
-                    SketchPlaneCandidates[i],
-                    "PLANE",
-                    0.0d,
-                    0.0d,
-                    0.0d,
-                    false,
-                    0,
-                    null,
-                    0);
-
-                if (selected)
-                {
-                    return true;
-                }
-            }
-
-            return false;
-        }
-
-        private static double ToMeters(decimal valueMillimeters)
-        {
-            return (double)valueMillimeters * MillimetersToMeters;
-        }
-
-        private static decimal Max(decimal left, decimal right)
-        {
-            if (left >= right)
-            {
-                return left;
-            }
-
-            return right;
+            return millimeters * MillimetersToMeters;
         }
     }
 }

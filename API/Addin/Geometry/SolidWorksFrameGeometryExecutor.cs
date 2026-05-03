@@ -178,12 +178,12 @@ namespace AxionFrame
 
             group.Segments = selectedSegments;
             group.ApplyCornerTreatment = true;
-            group.CornerTreatmentType = (int)swConnectedSegmentsOption_e.swConnectedSegments_Trim;
+            group.CornerTreatmentType = 0;
 
             object[] groups = new object[] { new DispatchWrapper(group) };
             Feature feature = featureManager.InsertStructuralWeldment5(
                 profilePath,
-                (int)swConnectedSegmentsOption_e.swConnectedSegments_Trim,
+                0,
                 false,
                 groups);
 

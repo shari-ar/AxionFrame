@@ -52,9 +52,11 @@ namespace AxionFrame.Tests
             ConfigurationProcessingResult result = Execute(BaselineJson());
 
             AssertTrue(result.IsValid, "Baseline config should be valid.");
-            AssertEqual(32, result.NormalizedConfig.Count, "Normalized key count mismatch.");
+            AssertEqual(36, result.NormalizedConfig.Count, "Normalized key count mismatch.");
             AssertFalse(result.HasBlockingFailures, "Baseline config should not have blocking failures.");
             AssertKeyExists(result.NormalizedConfig, "frame.layout.primary.memberExtentMin");
+            AssertKeyExists(result.NormalizedConfig, "frame.profile.library.path");
+            AssertKeyExists(result.NormalizedConfig, "frame.profile.selection.standard");
             AssertKeyExists(result.NormalizedConfig, "height.validation.supportedSet");
             AssertKeyExists(result.NormalizedConfig, "validation.mode");
         }

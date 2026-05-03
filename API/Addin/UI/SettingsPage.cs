@@ -5,6 +5,7 @@ using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
+using System.Reflection;
 
 namespace AxionFrame
 {
@@ -40,6 +41,9 @@ namespace AxionFrame
         private IPropertyManagerPageGroup _runtimeGroup;
         private readonly Dictionary<int, string> _settingsKeyByControlId = new Dictionary<int, string>();
         private readonly Dictionary<string, IPropertyManagerPageTextbox> _textboxBySettingsKey = new Dictionary<string, IPropertyManagerPageTextbox>(StringComparer.Ordinal);
+        private readonly Dictionary<int, string> _comboboxKeyByControlId = new Dictionary<int, string>();
+        private readonly Dictionary<int, List<string>> _comboboxItemsByControlId = new Dictionary<int, List<string>>();
+        private readonly Dictionary<string, object> _comboboxBySettingsKey = new Dictionary<string, object>(StringComparer.Ordinal);
         private readonly IDictionary<string, object> _initialSettings;
         private readonly Dictionary<string, string> _runtimeSettingsText = new Dictionary<string, string>(StringComparer.Ordinal);
         private bool _isInternalValueUpdate;
@@ -119,10 +123,10 @@ namespace AxionFrame
             AddSettingTextbox(_frameGroup, "frame.layout.primary.tableHeight", "Table Height (mm)", "Overall table height.");
 
             AddSettingTextbox(_frameGroup, ConfigProfileLibraryPath, "Profile Library Address", "SolidWorks weldment profile library folder path.");
-            AddSettingTextbox(_frameGroup, ConfigProfileSelectionStandard, "Profile Standard", "Example: ISO, ANSI, DIN.");
-            AddSettingTextbox(_frameGroup, ConfigProfileSelectionType, "Profile Type", "Example: SHS, RHS, L, C.");
-            AddSettingTextbox(_frameGroup, ConfigProfileSelectionSize, "Profile Size", "Example: 40x40x2.0.");
-            AddSettingTextbox(_frameGroup, ConfigAllowedProfiles, "Selected Profile Code (CSV)", "Resolved profile code list used at build time.");
+            AddSettingCombobox(_frameGroup, ConfigProfileSelectionStandard, "Profile Standard", "Select profile standard from library.");
+            AddSettingCombobox(_frameGroup, ConfigProfileSelectionType, "Profile Type", "Select profile type from library.");
+            AddSettingCombobox(_frameGroup, ConfigProfileSelectionSize, "Profile Size", "Select profile size from library.");
+            AddSettingTextbox(_frameGroup, ConfigAllowedProfiles, "Selected Profile Code (CSV)", "Resolved profile code list used at build time.", false);
             AddSettingTextbox(_frameGroup, "frame.profile.selection.dimensionTolerance", "Profile Dimension Tolerance (mm)", "Allowed profile dimension tolerance.");
             AddSettingTextbox(_frameGroup, "frame.naming.ruleSet", "Frame Naming Rule Set", "Deterministic naming baseline.");
         }
@@ -173,16 +177,30 @@ namespace AxionFrame
             string label,
             string tooltip)
         {
+            return AddSettingTextbox(group, key, label, tooltip, true);
+        }
+
+        private IPropertyManagerPageTextbox AddSettingTextbox(
+            IPropertyManagerPageGroup group,
+            string key,
+            string label,
+            string tooltip,
+            bool isEditable)
+        {
             short controlType = (short)swPropertyManagerPageControlType_e.swControlType_Textbox;
             short align = (short)swPropertyManagerPageControlLeftAlign_e.swControlAlign_LeftEdge;
-            int options = (int)swAddControlOptions_e.swControlOptions_Enabled |
-                          (int)swAddControlOptions_e.swControlOptions_Visible;
+            int options = (int)swAddControlOptions_e.swControlOptions_Visible;
+            if (isEditable)
+            {
+                options |= (int)swAddControlOptions_e.swControlOptions_Enabled;
+            }
 
             int controlId = _nextControlId++;
+            AddLabelControl(group, label, key);
             IPropertyManagerPageTextbox textbox = (IPropertyManagerPageTextbox)group.AddControl(
                 controlId,
                 controlType,
-                label,
+                string.Empty,
                 align,
                 options,
                 tooltip + " | config key: " + key);
@@ -197,6 +215,55 @@ namespace AxionFrame
             }
 
             return textbox;
+        }
+
+        private object AddSettingCombobox(
+            IPropertyManagerPageGroup group,
+            string key,
+            string label,
+            string tooltip)
+        {
+            short controlType = (short)swPropertyManagerPageControlType_e.swControlType_Combobox;
+            short align = (short)swPropertyManagerPageControlLeftAlign_e.swControlAlign_LeftEdge;
+            int options = (int)swAddControlOptions_e.swControlOptions_Enabled |
+                          (int)swAddControlOptions_e.swControlOptions_Visible;
+
+            int controlId = _nextControlId++;
+            AddLabelControl(group, label, key);
+            object combobox = group.AddControl(
+                controlId,
+                controlType,
+                string.Empty,
+                align,
+                options,
+                tooltip + " | config key: " + key);
+
+            if (combobox != null)
+            {
+                _comboboxKeyByControlId[controlId] = key;
+                _comboboxBySettingsKey[key] = combobox;
+                _comboboxItemsByControlId[controlId] = new List<string>();
+                string value = ResolveDisplayValue(key);
+                _runtimeSettingsText[key] = value;
+            }
+
+            return combobox;
+        }
+
+        private void AddLabelControl(IPropertyManagerPageGroup group, string label, string key)
+        {
+            short controlType = (short)swPropertyManagerPageControlType_e.swControlType_Label;
+            short align = (short)swPropertyManagerPageControlLeftAlign_e.swControlAlign_LeftEdge;
+            int options = (int)swAddControlOptions_e.swControlOptions_Visible;
+
+            int labelId = _nextControlId++;
+            group.AddControl(
+                labelId,
+                controlType,
+                label,
+                align,
+                options,
+                "Setting label | config key: " + key);
         }
 
         public void Show()
@@ -250,6 +317,35 @@ namespace AxionFrame
 
             if (string.Equals(key, ConfigProfileLibraryPath, StringComparison.Ordinal) ||
                 string.Equals(key, ConfigProfileSelectionStandard, StringComparison.Ordinal) ||
+                string.Equals(key, ConfigProfileSelectionType, StringComparison.Ordinal) ||
+                string.Equals(key, ConfigProfileSelectionSize, StringComparison.Ordinal))
+            {
+                RefreshProfileSelectionFromLibrary(false);
+            }
+        }
+
+        public void UpdateRuntimeValueFromComboboxByControlId(int controlId, int selectedIndex)
+        {
+            if (_isInternalValueUpdate)
+            {
+                return;
+            }
+
+            string key;
+            if (!_comboboxKeyByControlId.TryGetValue(controlId, out key))
+            {
+                return;
+            }
+
+            List<string> items;
+            if (!_comboboxItemsByControlId.TryGetValue(controlId, out items) || items == null || selectedIndex < 0 || selectedIndex >= items.Count)
+            {
+                return;
+            }
+
+            _runtimeSettingsText[key] = items[selectedIndex];
+
+            if (string.Equals(key, ConfigProfileSelectionStandard, StringComparison.Ordinal) ||
                 string.Equals(key, ConfigProfileSelectionType, StringComparison.Ordinal) ||
                 string.Equals(key, ConfigProfileSelectionSize, StringComparison.Ordinal))
             {
@@ -332,6 +428,11 @@ namespace AxionFrame
                     entry.Value.Text = value;
                 }
             }
+
+            foreach (KeyValuePair<string, object> entry in _comboboxBySettingsKey)
+            {
+                SetComboboxSelectionByValue(entry.Key, GetRuntimeValue(entry.Key));
+            }
         }
 
         private void RefreshRuntimeStateFromControls()
@@ -344,6 +445,21 @@ namespace AxionFrame
                 }
 
                 _runtimeSettingsText[entry.Key] = entry.Value.Text == null ? string.Empty : entry.Value.Text.Trim();
+            }
+
+            foreach (KeyValuePair<int, string> entry in _comboboxKeyByControlId)
+            {
+                List<string> items;
+                if (!_comboboxItemsByControlId.TryGetValue(entry.Key, out items) || items == null || items.Count == 0)
+                {
+                    continue;
+                }
+
+                int selectedIndex = GetComboboxSelectedIndex(entry.Key);
+                if (selectedIndex >= 0 && selectedIndex < items.Count)
+                {
+                    _runtimeSettingsText[entry.Value] = items[selectedIndex];
+                }
             }
         }
 
@@ -394,10 +510,51 @@ namespace AxionFrame
 
             string profileCode = selectedSize + "_" + selectedType;
 
+            BindProfileComboboxValues(profileEntries, selectedStandard, selectedType, selectedSize);
             SetRuntimeValue(ConfigProfileSelectionStandard, selectedStandard);
             SetRuntimeValue(ConfigProfileSelectionType, selectedType);
             SetRuntimeValue(ConfigProfileSelectionSize, selectedSize);
             SetRuntimeValue(ConfigAllowedProfiles, profileCode);
+        }
+
+        private void BindProfileComboboxValues(
+            IList<ProfileLibraryEntry> profileEntries,
+            string selectedStandard,
+            string selectedType,
+            string selectedSize)
+        {
+            List<string> standards = new List<string>();
+            for (int i = 0; i < profileEntries.Count; i++)
+            {
+                if (!ContainsValue(standards, profileEntries[i].Standard))
+                {
+                    standards.Add(profileEntries[i].Standard);
+                }
+            }
+
+            List<ProfileLibraryEntry> typeCandidates = FilterByStandard(profileEntries, selectedStandard);
+            List<string> types = new List<string>();
+            for (int i = 0; i < typeCandidates.Count; i++)
+            {
+                if (!ContainsValue(types, typeCandidates[i].Type))
+                {
+                    types.Add(typeCandidates[i].Type);
+                }
+            }
+
+            List<ProfileLibraryEntry> sizeCandidates = FilterByType(typeCandidates, selectedType);
+            List<string> sizes = new List<string>();
+            for (int i = 0; i < sizeCandidates.Count; i++)
+            {
+                if (!ContainsValue(sizes, sizeCandidates[i].Size))
+                {
+                    sizes.Add(sizeCandidates[i].Size);
+                }
+            }
+
+            SetComboboxItemsAndSelection(ConfigProfileSelectionStandard, standards, selectedStandard);
+            SetComboboxItemsAndSelection(ConfigProfileSelectionType, types, selectedType);
+            SetComboboxItemsAndSelection(ConfigProfileSelectionSize, sizes, selectedSize);
         }
 
         private static List<ProfileLibraryEntry> LoadProfilesFromLibrary(string libraryPath)
@@ -507,7 +664,7 @@ namespace AxionFrame
         {
             try
             {
-                string commonData = Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData);
+                string commonData = System.Environment.GetFolderPath(System.Environment.SpecialFolder.CommonApplicationData);
                 string[] candidates =
                 {
                     Path.Combine(commonData, "SOLIDWORKS", "SOLIDWORKS 2026", "weldment profiles"),
@@ -561,6 +718,168 @@ namespace AxionFrame
             finally
             {
                 _isInternalValueUpdate = false;
+            }
+        }
+
+        private void SetComboboxItemsAndSelection(string key, IList<string> values, string selectedValue)
+        {
+            int controlId = GetComboboxControlIdByKey(key);
+            if (controlId < 0)
+            {
+                return;
+            }
+
+            object combo;
+            if (!_comboboxBySettingsKey.TryGetValue(key, out combo) || combo == null)
+            {
+                return;
+            }
+
+            List<string> items = new List<string>();
+            if (values != null)
+            {
+                for (int i = 0; i < values.Count; i++)
+                {
+                    string value = values[i] == null ? string.Empty : values[i].Trim();
+                    if (!string.IsNullOrWhiteSpace(value) && !ContainsValue(items, value))
+                    {
+                        items.Add(value);
+                    }
+                }
+            }
+
+            _comboboxItemsByControlId[controlId] = items;
+            InvokeComboboxClear(combo);
+            InvokeComboboxAddItems(combo, items);
+            SetComboboxSelectionByValue(key, selectedValue);
+        }
+
+        private void SetComboboxSelectionByValue(string key, string selectedValue)
+        {
+            int controlId = GetComboboxControlIdByKey(key);
+            if (controlId < 0)
+            {
+                return;
+            }
+
+            List<string> items;
+            if (!_comboboxItemsByControlId.TryGetValue(controlId, out items) || items == null || items.Count == 0)
+            {
+                return;
+            }
+
+            int index = 0;
+            for (int i = 0; i < items.Count; i++)
+            {
+                if (string.Equals(items[i], selectedValue, StringComparison.OrdinalIgnoreCase))
+                {
+                    index = i;
+                    break;
+                }
+            }
+
+            object combo;
+            if (_comboboxBySettingsKey.TryGetValue(key, out combo) && combo != null)
+            {
+                _isInternalValueUpdate = true;
+                try
+                {
+                    SetComboboxSelectedIndex(combo, index);
+                }
+                finally
+                {
+                    _isInternalValueUpdate = false;
+                }
+            }
+        }
+
+        private int GetComboboxControlIdByKey(string key)
+        {
+            foreach (KeyValuePair<int, string> entry in _comboboxKeyByControlId)
+            {
+                if (string.Equals(entry.Value, key, StringComparison.Ordinal))
+                {
+                    return entry.Key;
+                }
+            }
+
+            return -1;
+        }
+
+        private int GetComboboxSelectedIndex(int controlId)
+        {
+            string key;
+            if (!_comboboxKeyByControlId.TryGetValue(controlId, out key))
+            {
+                return -1;
+            }
+
+            object combo;
+            if (!_comboboxBySettingsKey.TryGetValue(key, out combo) || combo == null)
+            {
+                return -1;
+            }
+
+            PropertyInfo property = combo.GetType().GetProperty("CurrentSelection");
+            if (property != null)
+            {
+                object value = property.GetValue(combo, null);
+                if (value is int)
+                {
+                    return (int)value;
+                }
+            }
+
+            return -1;
+        }
+
+        private static void SetComboboxSelectedIndex(object combo, int index)
+        {
+            PropertyInfo property = combo.GetType().GetProperty("CurrentSelection");
+            if (property != null && property.CanWrite)
+            {
+                property.SetValue(combo, index, null);
+            }
+        }
+
+        private static void InvokeComboboxClear(object combo)
+        {
+            MethodInfo method = combo.GetType().GetMethod("Clear");
+            if (method != null)
+            {
+                method.Invoke(combo, null);
+            }
+        }
+
+        private static void InvokeComboboxAddItems(object combo, IList<string> items)
+        {
+            if (items == null || items.Count == 0)
+            {
+                return;
+            }
+
+            string payload = string.Join("|", items);
+            MethodInfo addItems = combo.GetType().GetMethod("AddItems", new[] { typeof(string) });
+            if (addItems != null)
+            {
+                addItems.Invoke(combo, new object[] { payload });
+                return;
+            }
+
+            addItems = combo.GetType().GetMethod("AddItems", new[] { typeof(string), typeof(int) });
+            if (addItems != null)
+            {
+                addItems.Invoke(combo, new object[] { payload, items.Count });
+                return;
+            }
+
+            MethodInfo addItem = combo.GetType().GetMethod("AddItem", new[] { typeof(string) });
+            if (addItem != null)
+            {
+                for (int i = 0; i < items.Count; i++)
+                {
+                    addItem.Invoke(combo, new object[] { items[i] });
+                }
             }
         }
 
@@ -621,6 +940,19 @@ namespace AxionFrame
             for (int i = 0; i < entries.Count; i++)
             {
                 if (string.Equals(entries[i].Size, size, StringComparison.OrdinalIgnoreCase))
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        private static bool ContainsValue(IList<string> values, string candidate)
+        {
+            for (int i = 0; i < values.Count; i++)
+            {
+                if (string.Equals(values[i], candidate, StringComparison.OrdinalIgnoreCase))
                 {
                     return true;
                 }

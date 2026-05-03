@@ -54,6 +54,7 @@ namespace AxionFrame
 
         public void OnComboboxSelectionChanged(int id, int item)
         {
+            _page.UpdateRuntimeValueFromComboboxByControlId(id, item);
         }
 
         public void OnGroupCheck(int id, bool status)

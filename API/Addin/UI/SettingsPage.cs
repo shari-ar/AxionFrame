@@ -823,7 +823,7 @@ namespace AxionFrame
 
         private static void SetComboboxSelectedIndex(IPropertyManagerPageCombobox combo, int index)
         {
-            combo.CurrentSelection = index;
+            combo.CurrentSelection = (short)index;
         }
 
         private static void InvokeComboboxClear(IPropertyManagerPageCombobox combo)
@@ -838,7 +838,7 @@ namespace AxionFrame
                 return;
             }
 
-            combo.AddItems(string.Join("|", items), items.Count);
+            combo.AddItems(string.Join("|", items));
         }
 
         private static string JoinStringList(IList<string> values)

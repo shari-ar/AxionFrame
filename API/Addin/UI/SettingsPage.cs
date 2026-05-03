@@ -5,7 +5,6 @@ using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
-using System.Reflection;
 
 namespace AxionFrame
 {
@@ -43,7 +42,7 @@ namespace AxionFrame
         private readonly Dictionary<string, IPropertyManagerPageTextbox> _textboxBySettingsKey = new Dictionary<string, IPropertyManagerPageTextbox>(StringComparer.Ordinal);
         private readonly Dictionary<int, string> _comboboxKeyByControlId = new Dictionary<int, string>();
         private readonly Dictionary<int, List<string>> _comboboxItemsByControlId = new Dictionary<int, List<string>>();
-        private readonly Dictionary<string, object> _comboboxBySettingsKey = new Dictionary<string, object>(StringComparer.Ordinal);
+        private readonly Dictionary<string, IPropertyManagerPageCombobox> _comboboxBySettingsKey = new Dictionary<string, IPropertyManagerPageCombobox>(StringComparer.Ordinal);
         private readonly IDictionary<string, object> _initialSettings;
         private readonly Dictionary<string, string> _runtimeSettingsText = new Dictionary<string, string>(StringComparer.Ordinal);
         private bool _isInternalValueUpdate;
@@ -217,7 +216,7 @@ namespace AxionFrame
             return textbox;
         }
 
-        private object AddSettingCombobox(
+        private IPropertyManagerPageCombobox AddSettingCombobox(
             IPropertyManagerPageGroup group,
             string key,
             string label,
@@ -230,7 +229,7 @@ namespace AxionFrame
 
             int controlId = _nextControlId++;
             AddLabelControl(group, label, key);
-            object combobox = group.AddControl(
+            IPropertyManagerPageCombobox combobox = (IPropertyManagerPageCombobox)group.AddControl(
                 controlId,
                 controlType,
                 string.Empty,
@@ -429,7 +428,7 @@ namespace AxionFrame
                 }
             }
 
-            foreach (KeyValuePair<string, object> entry in _comboboxBySettingsKey)
+            foreach (KeyValuePair<string, IPropertyManagerPageCombobox> entry in _comboboxBySettingsKey)
             {
                 SetComboboxSelectionByValue(entry.Key, GetRuntimeValue(entry.Key));
             }
@@ -729,7 +728,7 @@ namespace AxionFrame
                 return;
             }
 
-            object combo;
+            IPropertyManagerPageCombobox combo;
             if (!_comboboxBySettingsKey.TryGetValue(key, out combo) || combo == null)
             {
                 return;
@@ -778,7 +777,7 @@ namespace AxionFrame
                 }
             }
 
-            object combo;
+            IPropertyManagerPageCombobox combo;
             if (_comboboxBySettingsKey.TryGetValue(key, out combo) && combo != null)
             {
                 _isInternalValueUpdate = true;
@@ -814,73 +813,32 @@ namespace AxionFrame
                 return -1;
             }
 
-            object combo;
+            IPropertyManagerPageCombobox combo;
             if (!_comboboxBySettingsKey.TryGetValue(key, out combo) || combo == null)
             {
                 return -1;
             }
-
-            PropertyInfo property = combo.GetType().GetProperty("CurrentSelection");
-            if (property != null)
-            {
-                object value = property.GetValue(combo, null);
-                if (value is int)
-                {
-                    return (int)value;
-                }
-            }
-
-            return -1;
+            return combo.CurrentSelection;
         }
 
-        private static void SetComboboxSelectedIndex(object combo, int index)
+        private static void SetComboboxSelectedIndex(IPropertyManagerPageCombobox combo, int index)
         {
-            PropertyInfo property = combo.GetType().GetProperty("CurrentSelection");
-            if (property != null && property.CanWrite)
-            {
-                property.SetValue(combo, index, null);
-            }
+            combo.CurrentSelection = index;
         }
 
-        private static void InvokeComboboxClear(object combo)
+        private static void InvokeComboboxClear(IPropertyManagerPageCombobox combo)
         {
-            MethodInfo method = combo.GetType().GetMethod("Clear");
-            if (method != null)
-            {
-                method.Invoke(combo, null);
-            }
+            combo.Clear();
         }
 
-        private static void InvokeComboboxAddItems(object combo, IList<string> items)
+        private static void InvokeComboboxAddItems(IPropertyManagerPageCombobox combo, IList<string> items)
         {
             if (items == null || items.Count == 0)
             {
                 return;
             }
 
-            string payload = string.Join("|", items);
-            MethodInfo addItems = combo.GetType().GetMethod("AddItems", new[] { typeof(string) });
-            if (addItems != null)
-            {
-                addItems.Invoke(combo, new object[] { payload });
-                return;
-            }
-
-            addItems = combo.GetType().GetMethod("AddItems", new[] { typeof(string), typeof(int) });
-            if (addItems != null)
-            {
-                addItems.Invoke(combo, new object[] { payload, items.Count });
-                return;
-            }
-
-            MethodInfo addItem = combo.GetType().GetMethod("AddItem", new[] { typeof(string) });
-            if (addItem != null)
-            {
-                for (int i = 0; i < items.Count; i++)
-                {
-                    addItem.Invoke(combo, new object[] { items[i] });
-                }
-            }
+            combo.AddItems(string.Join("|", items), items.Count);
         }
 
         private static string JoinStringList(IList<string> values)

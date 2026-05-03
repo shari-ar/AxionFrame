@@ -52,7 +52,7 @@ namespace AxionFrame.Tests
             ConfigurationProcessingResult result = Execute(BaselineJson());
 
             AssertTrue(result.IsValid, "Baseline config should be valid.");
-            AssertEqual(30, result.NormalizedConfig.Count, "Normalized key count mismatch.");
+            AssertEqual(32, result.NormalizedConfig.Count, "Normalized key count mismatch.");
             AssertFalse(result.HasBlockingFailures, "Baseline config should not have blocking failures.");
             AssertKeyExists(result.NormalizedConfig, "frame.layout.primary.memberExtentMin");
             AssertKeyExists(result.NormalizedConfig, "height.validation.supportedSet");
@@ -687,7 +687,9 @@ namespace AxionFrame.Tests
       ""primary"": {
         ""memberExtentMin"": 620.0,
         ""memberExtentMax"": 980.0,
-        ""placementTolerance"": 0.5
+        ""placementTolerance"": 0.5,
+        ""tableWidth"": 700.0,
+        ""tableHeight"": 1000.0
       }
     },
     ""profile"": {

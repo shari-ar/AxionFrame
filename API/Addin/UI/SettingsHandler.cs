@@ -120,6 +120,7 @@ namespace AxionFrame
 
         public void OnTextboxChanged(int id, string text)
         {
+            _page.UpdateRuntimeValueByControlId(id, text);
         }
 
         public void AfterActivation()

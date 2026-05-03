@@ -35,6 +35,7 @@ namespace AxionFrame
         private readonly Dictionary<int, string> _settingsKeyByControlId = new Dictionary<int, string>();
         private readonly Dictionary<string, IPropertyManagerPageTextbox> _textboxBySettingsKey = new Dictionary<string, IPropertyManagerPageTextbox>(StringComparer.Ordinal);
         private readonly IDictionary<string, object> _initialSettings;
+        private readonly Dictionary<string, string> _runtimeSettingsText = new Dictionary<string, string>(StringComparer.Ordinal);
 
         public SettingsPage(SwAddin addin)
         {
@@ -174,9 +175,11 @@ namespace AxionFrame
 
             if (textbox != null)
             {
-                textbox.Text = ResolveDisplayValue(key);
+                string value = ResolveDisplayValue(key);
+                textbox.Text = value;
                 _settingsKeyByControlId[controlId] = key;
                 _textboxBySettingsKey[key] = textbox;
+                _runtimeSettingsText[key] = value;
             }
 
             return textbox;
@@ -184,6 +187,7 @@ namespace AxionFrame
 
         public void Show()
         {
+            ApplyRuntimeStateToControls();
             if (swPropertyPage != null)
             {
                 swPropertyPage.Show();
@@ -192,10 +196,11 @@ namespace AxionFrame
 
         public IDictionary<string, string> CaptureRuntimeOverrides()
         {
+            RefreshRuntimeStateFromControls();
             Dictionary<string, string> overrides = new Dictionary<string, string>(StringComparer.Ordinal);
-            foreach (KeyValuePair<string, IPropertyManagerPageTextbox> entry in _textboxBySettingsKey)
+            foreach (KeyValuePair<string, string> entry in _runtimeSettingsText)
             {
-                overrides[entry.Key] = entry.Value == null ? string.Empty : (entry.Value.Text ?? string.Empty).Trim();
+                overrides[entry.Key] = entry.Value == null ? string.Empty : entry.Value.Trim();
             }
 
             return overrides;
@@ -204,6 +209,24 @@ namespace AxionFrame
         public bool TryResolveSettingsKey(int controlId, out string key)
         {
             return _settingsKeyByControlId.TryGetValue(controlId, out key);
+        }
+
+        public void UpdateRuntimeValueByControlId(int controlId, string value)
+        {
+            string key;
+            if (!_settingsKeyByControlId.TryGetValue(controlId, out key))
+            {
+                return;
+            }
+
+            string normalizedValue = value == null ? string.Empty : value.Trim();
+            _runtimeSettingsText[key] = normalizedValue;
+
+            IPropertyManagerPageTextbox textbox;
+            if (_textboxBySettingsKey.TryGetValue(key, out textbox) && textbox != null && !string.Equals(textbox.Text, normalizedValue, StringComparison.Ordinal))
+            {
+                textbox.Text = normalizedValue;
+            }
         }
 
         private IDictionary<string, object> LoadInitialSettings()
@@ -227,6 +250,12 @@ namespace AxionFrame
 
         private string ResolveDisplayValue(string key)
         {
+            string runtimeValue;
+            if (_runtimeSettingsText.TryGetValue(key, out runtimeValue))
+            {
+                return runtimeValue;
+            }
+
             object value;
             if (!_initialSettings.TryGetValue(key, out value) || value == null)
             {
@@ -253,6 +282,36 @@ namespace AxionFrame
             }
 
             return Convert.ToString(value, CultureInfo.InvariantCulture);
+        }
+
+        private void ApplyRuntimeStateToControls()
+        {
+            foreach (KeyValuePair<string, IPropertyManagerPageTextbox> entry in _textboxBySettingsKey)
+            {
+                if (entry.Value == null)
+                {
+                    continue;
+                }
+
+                string value;
+                if (_runtimeSettingsText.TryGetValue(entry.Key, out value))
+                {
+                    entry.Value.Text = value;
+                }
+            }
+        }
+
+        private void RefreshRuntimeStateFromControls()
+        {
+            foreach (KeyValuePair<string, IPropertyManagerPageTextbox> entry in _textboxBySettingsKey)
+            {
+                if (entry.Value == null)
+                {
+                    continue;
+                }
+
+                _runtimeSettingsText[entry.Key] = entry.Value.Text == null ? string.Empty : entry.Value.Text.Trim();
+            }
         }
     }
 }

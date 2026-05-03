@@ -6,8 +6,6 @@ namespace AxionFrame
     public sealed class SolidWorksFrameGeometryExecutor : IFrameGeometryExecutor
     {
         private const double MillimetersToMeters = 0.001d;
-        private const double ZWidthMillimeters = 700.0d;
-        private const double ZHeightMillimeters = 1000.0d;
 
         private readonly ISldWorks _swApp;
 
@@ -42,8 +40,15 @@ namespace AxionFrame
             part.SketchManager.InsertSketch(true);
             part.ClearSelection2(true);
 
-            double halfWidth = ToMeters(ZWidthMillimeters / 2.0d);
-            double halfHeight = ToMeters(ZHeightMillimeters / 2.0d);
+            double tableWidthMillimeters = (double)request.TableWidth;
+            double tableHeightMillimeters = (double)request.TableHeight;
+            if (tableWidthMillimeters <= 0.0d || tableHeightMillimeters <= 0.0d)
+            {
+                throw new InvalidOperationException("Table width and height must be greater than zero.");
+            }
+
+            double halfWidth = ToMeters(tableWidthMillimeters / 2.0d);
+            double halfHeight = ToMeters(tableHeightMillimeters / 2.0d);
 
             double leftX = -halfWidth;
             double rightX = halfWidth;
@@ -79,7 +84,7 @@ namespace AxionFrame
             part.ForceRebuild3(false);
 
             string note =
-                "Z-frame sketch generated on Right Plane: width=700mm, height=1000mm, centered at origin; " +
+                "Z-frame sketch generated on Right Plane: width=" + tableWidthMillimeters.ToString("0.###") + "mm, height=" + tableHeightMillimeters.ToString("0.###") + "mm, centered at origin; " +
                 "braces connect end points to diagonal one-third split points; profile context=" + request.SelectedProfileCode + ".";
             return new FrameGeometryResult(true, part.GetTitle(), note);
         }

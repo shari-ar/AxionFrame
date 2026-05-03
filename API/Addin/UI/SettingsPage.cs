@@ -99,6 +99,8 @@ namespace AxionFrame
             AddSettingTextbox(_frameGroup, "frame.layout.primary.memberExtentMin", "620.0", "mm");
             AddSettingTextbox(_frameGroup, "frame.layout.primary.memberExtentMax", "980.0", "mm");
             AddSettingTextbox(_frameGroup, "frame.layout.primary.placementTolerance", "0.5", "mm");
+            AddSettingTextbox(_frameGroup, "frame.layout.primary.tableWidth", "700.0", "mm");
+            AddSettingTextbox(_frameGroup, "frame.layout.primary.tableHeight", "1000.0", "mm");
             AddSettingTextbox(_frameGroup, "frame.profile.selection.allowedProfiles", "40x40x2.0_SHS,60x30x2.0_RHS", "approved baseline profile set");
             AddSettingTextbox(_frameGroup, "frame.profile.selection.dimensionTolerance", "0.2", "mm");
             AddSettingTextbox(_frameGroup, "frame.naming.ruleSet", "AXF_STANDARD_V1", "deterministic naming baseline");

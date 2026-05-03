@@ -30,6 +30,8 @@ namespace AxionFrame
             decimal memberExtentMin,
             decimal memberExtentMax,
             decimal placementTolerance,
+            decimal tableWidth,
+            decimal tableHeight,
             decimal profileDimensionTolerance,
             string selectedProfileCode,
             FrameProfileDefinition selectedProfile,
@@ -40,6 +42,8 @@ namespace AxionFrame
             MemberExtentMin = memberExtentMin;
             MemberExtentMax = memberExtentMax;
             PlacementTolerance = placementTolerance;
+            TableWidth = tableWidth;
+            TableHeight = tableHeight;
             ProfileDimensionTolerance = profileDimensionTolerance;
             SelectedProfileCode = selectedProfileCode ?? string.Empty;
             SelectedProfile = selectedProfile ?? new FrameProfileDefinition(string.Empty, 0m, 0m, 0m, string.Empty);
@@ -51,6 +55,8 @@ namespace AxionFrame
         public decimal MemberExtentMin { get; private set; }
         public decimal MemberExtentMax { get; private set; }
         public decimal PlacementTolerance { get; private set; }
+        public decimal TableWidth { get; private set; }
+        public decimal TableHeight { get; private set; }
         public decimal ProfileDimensionTolerance { get; private set; }
         public string SelectedProfileCode { get; private set; }
         public FrameProfileDefinition SelectedProfile { get; private set; }
@@ -160,6 +166,8 @@ namespace AxionFrame
         private const string ConfigLayoutMemberExtentMin = "frame.layout.primary.memberExtentMin";
         private const string ConfigLayoutMemberExtentMax = "frame.layout.primary.memberExtentMax";
         private const string ConfigLayoutPlacementTolerance = "frame.layout.primary.placementTolerance";
+        private const string ConfigLayoutTableWidth = "frame.layout.primary.tableWidth";
+        private const string ConfigLayoutTableHeight = "frame.layout.primary.tableHeight";
         private const string ConfigAllowedProfiles = "frame.profile.selection.allowedProfiles";
         private const string ConfigProfileDimensionTolerance = "frame.profile.selection.dimensionTolerance";
         private const string ConfigNamingRuleSet = "frame.naming.ruleSet";
@@ -226,6 +234,8 @@ namespace AxionFrame
             decimal memberExtentMin = GetRequiredDecimal(normalizedConfig, ConfigLayoutMemberExtentMin);
             decimal memberExtentMax = GetRequiredDecimal(normalizedConfig, ConfigLayoutMemberExtentMax);
             decimal placementTolerance = GetRequiredDecimal(normalizedConfig, ConfigLayoutPlacementTolerance);
+            decimal tableWidth = GetRequiredDecimal(normalizedConfig, ConfigLayoutTableWidth);
+            decimal tableHeight = GetRequiredDecimal(normalizedConfig, ConfigLayoutTableHeight);
             List<string> allowedProfiles = GetRequiredStringList(normalizedConfig, ConfigAllowedProfiles);
             decimal profileDimensionTolerance = GetRequiredDecimal(normalizedConfig, ConfigProfileDimensionTolerance);
             string namingRuleSet = GetRequiredString(normalizedConfig, ConfigNamingRuleSet);
@@ -243,6 +253,16 @@ namespace AxionFrame
             if (profileDimensionTolerance < 0m)
             {
                 throw new InvalidOperationException("Frame profile dimension tolerance cannot be negative.");
+            }
+
+            if (tableWidth <= 0m)
+            {
+                throw new InvalidOperationException("Frame table width must be greater than zero.");
+            }
+
+            if (tableHeight <= 0m)
+            {
+                throw new InvalidOperationException("Frame table height must be greater than zero.");
             }
 
             if (!string.Equals(namingRuleSet, DeterministicNamingService.RuleSetStandardV1, StringComparison.Ordinal))
@@ -274,6 +294,8 @@ namespace AxionFrame
                 memberExtentMin,
                 memberExtentMax,
                 placementTolerance,
+                tableWidth,
+                tableHeight,
                 profileDimensionTolerance,
                 selectedProfileCode,
                 selectedProfile,
@@ -379,6 +401,8 @@ namespace AxionFrame
             decimal memberExtentMin,
             decimal memberExtentMax,
             decimal placementTolerance,
+            decimal tableWidth,
+            decimal tableHeight,
             decimal profileDimensionTolerance,
             string selectedProfileCode,
             FrameProfileDefinition selectedProfile,
@@ -395,6 +419,8 @@ namespace AxionFrame
                 memberExtentMin,
                 memberExtentMax,
                 placementTolerance,
+                tableWidth,
+                tableHeight,
                 profileDimensionTolerance,
                 selectedProfileCode,
                 selectedProfile,

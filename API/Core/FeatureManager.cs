@@ -207,6 +207,8 @@ namespace AxionFrame
             schema.Add(DecimalField("frame.layout.primary.memberExtentMin", 620.0m, 620.0m, 980.0m, "FRM-001", "VAL-FRM-001-LAYOUT", ValidationSeverity.Critical, true));
             schema.Add(DecimalField("frame.layout.primary.memberExtentMax", 980.0m, 620.0m, 980.0m, "FRM-001", "VAL-FRM-001-LAYOUT", ValidationSeverity.Critical, true));
             schema.Add(DecimalField("frame.layout.primary.placementTolerance", 0.5m, 0.0m, 0.5m, "FRM-001", "VAL-FRM-001-LAYOUT", ValidationSeverity.Critical, true));
+            schema.Add(DecimalField("frame.layout.primary.tableWidth", 700.0m, 300.0m, 3000.0m, "FRM-001", "VAL-FRM-001-LAYOUT", ValidationSeverity.Critical, true));
+            schema.Add(DecimalField("frame.layout.primary.tableHeight", 1000.0m, 300.0m, 3000.0m, "FRM-001", "VAL-FRM-001-LAYOUT", ValidationSeverity.Critical, true));
 
             schema.Add(ArrayStringField("frame.profile.selection.allowedProfiles", BaselineProfiles, BaselineProfiles, "FRM-002", "VAL-FRM-002-PROFILE", ValidationSeverity.Critical, true));
             schema.Add(DecimalField("frame.profile.selection.dimensionTolerance", 0.2m, 0.0m, 0.2m, "FRM-002", "VAL-FRM-002-PROFILE", ValidationSeverity.Critical, true));

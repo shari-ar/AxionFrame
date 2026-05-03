@@ -35,6 +35,10 @@ namespace AxionFrame
             decimal profileDimensionTolerance,
             string selectedProfileCode,
             FrameProfileDefinition selectedProfile,
+            string profileLibraryPath,
+            string selectedProfileStandard,
+            string selectedProfileType,
+            string selectedProfileSize,
             string namingRuleSet)
         {
             LayoutFeatureName = layoutFeatureName ?? string.Empty;
@@ -47,6 +51,10 @@ namespace AxionFrame
             ProfileDimensionTolerance = profileDimensionTolerance;
             SelectedProfileCode = selectedProfileCode ?? string.Empty;
             SelectedProfile = selectedProfile ?? new FrameProfileDefinition(string.Empty, 0m, 0m, 0m, string.Empty);
+            ProfileLibraryPath = profileLibraryPath ?? string.Empty;
+            SelectedProfileStandard = selectedProfileStandard ?? string.Empty;
+            SelectedProfileType = selectedProfileType ?? string.Empty;
+            SelectedProfileSize = selectedProfileSize ?? string.Empty;
             NamingRuleSet = namingRuleSet ?? string.Empty;
         }
 
@@ -60,6 +68,10 @@ namespace AxionFrame
         public decimal ProfileDimensionTolerance { get; private set; }
         public string SelectedProfileCode { get; private set; }
         public FrameProfileDefinition SelectedProfile { get; private set; }
+        public string ProfileLibraryPath { get; private set; }
+        public string SelectedProfileStandard { get; private set; }
+        public string SelectedProfileType { get; private set; }
+        public string SelectedProfileSize { get; private set; }
         public string NamingRuleSet { get; private set; }
     }
 
@@ -169,6 +181,10 @@ namespace AxionFrame
         private const string ConfigLayoutTableWidth = "frame.layout.primary.tableWidth";
         private const string ConfigLayoutTableHeight = "frame.layout.primary.tableHeight";
         private const string ConfigAllowedProfiles = "frame.profile.selection.allowedProfiles";
+        private const string ConfigProfileLibraryPath = "frame.profile.library.path";
+        private const string ConfigProfileSelectionStandard = "frame.profile.selection.standard";
+        private const string ConfigProfileSelectionType = "frame.profile.selection.type";
+        private const string ConfigProfileSelectionSize = "frame.profile.selection.size";
         private const string ConfigProfileDimensionTolerance = "frame.profile.selection.dimensionTolerance";
         private const string ConfigNamingRuleSet = "frame.naming.ruleSet";
         private const string ReportTraceFrameLayout = "frame.layout";
@@ -231,6 +247,10 @@ namespace AxionFrame
             decimal tableWidth = GetRequiredDecimal(normalizedConfig, ConfigLayoutTableWidth);
             decimal tableHeight = GetRequiredDecimal(normalizedConfig, ConfigLayoutTableHeight);
             List<string> allowedProfiles = GetRequiredStringList(normalizedConfig, ConfigAllowedProfiles);
+            string profileLibraryPath = GetRequiredString(normalizedConfig, ConfigProfileLibraryPath);
+            string selectedProfileStandard = GetRequiredString(normalizedConfig, ConfigProfileSelectionStandard);
+            string selectedProfileType = GetRequiredString(normalizedConfig, ConfigProfileSelectionType);
+            string selectedProfileSize = GetRequiredString(normalizedConfig, ConfigProfileSelectionSize);
             decimal profileDimensionTolerance = GetRequiredDecimal(normalizedConfig, ConfigProfileDimensionTolerance);
             string namingRuleSet = GetRequiredString(normalizedConfig, ConfigNamingRuleSet);
 
@@ -293,6 +313,10 @@ namespace AxionFrame
                 profileDimensionTolerance,
                 selectedProfileCode,
                 selectedProfile,
+                profileLibraryPath,
+                selectedProfileStandard,
+                selectedProfileType,
+                selectedProfileSize,
                 namingRuleSet);
 
             return new FrameBuildOutput(
@@ -388,6 +412,10 @@ namespace AxionFrame
             decimal profileDimensionTolerance,
             string selectedProfileCode,
             FrameProfileDefinition selectedProfile,
+            string profileLibraryPath,
+            string selectedProfileStandard,
+            string selectedProfileType,
+            string selectedProfileSize,
             string namingRuleSet)
         {
             if (_geometryExecutor == null)
@@ -406,6 +434,10 @@ namespace AxionFrame
                 profileDimensionTolerance,
                 selectedProfileCode,
                 selectedProfile,
+                profileLibraryPath,
+                selectedProfileStandard,
+                selectedProfileType,
+                selectedProfileSize,
                 namingRuleSet);
 
             try

@@ -1,4 +1,7 @@
 using SolidWorks.Interop.sldworks;
+using SolidWorks.Interop.swconst;
+using System.IO;
+using System.Runtime.InteropServices;
 using System;
 
 namespace AxionFrame
@@ -79,6 +82,8 @@ namespace AxionFrame
                 throw new InvalidOperationException("Failed to create brace segments to split the Z center line.");
             }
 
+            ApplyStructuralMemberProfile(part, request, new[] { topSegment, diagonalSegment, bottomSegment, braceTop, braceBottom });
+
             part.ClearSelection2(true);
             part.SketchManager.InsertSketch(true);
             part.ForceRebuild3(false);
@@ -98,6 +103,94 @@ namespace AxionFrame
         private static double ToMeters(double millimeters)
         {
             return millimeters * MillimetersToMeters;
+        }
+
+        private static void ApplyStructuralMemberProfile(IModelDoc2 part, FrameGeometryRequest request, SketchSegment[] pathSegments)
+        {
+            if (part == null)
+            {
+                throw new ArgumentNullException(nameof(part));
+            }
+
+            if (request == null)
+            {
+                throw new ArgumentNullException(nameof(request));
+            }
+
+            if (pathSegments == null || pathSegments.Length == 0)
+            {
+                throw new InvalidOperationException("No sketch segments were generated for structural profile application.");
+            }
+
+            if (string.IsNullOrWhiteSpace(request.ProfileLibraryPath) ||
+                string.IsNullOrWhiteSpace(request.SelectedProfileStandard) ||
+                string.IsNullOrWhiteSpace(request.SelectedProfileType) ||
+                string.IsNullOrWhiteSpace(request.SelectedProfileSize))
+            {
+                throw new InvalidOperationException("Profile settings are incomplete. Library path, standard, type, and size are required.");
+            }
+
+            string profilePath = Path.Combine(
+                request.ProfileLibraryPath,
+                request.SelectedProfileStandard,
+                request.SelectedProfileType,
+                request.SelectedProfileSize + ".sldlfp");
+
+            if (!File.Exists(profilePath))
+            {
+                throw new InvalidOperationException("Selected weldment profile file was not found: " + profilePath + ".");
+            }
+
+            part.ClearSelection2(true);
+            for (int i = 0; i < pathSegments.Length; i++)
+            {
+                if (pathSegments[i] == null)
+                {
+                    continue;
+                }
+
+                bool selected = pathSegments[i].Select4(true, null);
+                if (!selected)
+                {
+                    throw new InvalidOperationException("Failed to select a sketch segment for structural member generation.");
+                }
+            }
+
+            IFeatureManager featureManager = part.FeatureManager;
+            if (featureManager == null)
+            {
+                throw new InvalidOperationException("SolidWorks FeatureManager is not available.");
+            }
+
+            featureManager.InsertWeldmentFeature();
+
+            StructuralMemberGroup group = featureManager.CreateStructuralMemberGroup();
+            if (group == null)
+            {
+                throw new InvalidOperationException("Failed to create structural member group.");
+            }
+
+            object[] selectedSegments = new object[pathSegments.Length];
+            for (int i = 0; i < pathSegments.Length; i++)
+            {
+                selectedSegments[i] = pathSegments[i];
+            }
+
+            group.Segments = selectedSegments;
+            group.ApplyCornerTreatment = true;
+            group.CornerTreatmentType = (int)swConnectedSegmentsOption_e.swConnectedSegments_Trim;
+
+            object[] groups = new object[] { new DispatchWrapper(group) };
+            Feature feature = featureManager.InsertStructuralWeldment5(
+                profilePath,
+                (int)swConnectedSegmentsOption_e.swConnectedSegments_Trim,
+                false,
+                groups);
+
+            if (feature == null)
+            {
+                throw new InvalidOperationException("Structural member creation failed for profile path: " + profilePath + ".");
+            }
         }
     }
 }

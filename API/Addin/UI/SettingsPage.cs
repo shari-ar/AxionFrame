@@ -838,7 +838,10 @@ namespace AxionFrame
                 return;
             }
 
-            combo.AddItems(string.Join("|", items));
+            for (int i = 0; i < items.Count; i++)
+            {
+                combo.AddItems(items[i]);
+            }
         }
 
         private static string JoinStringList(IList<string> values)

@@ -175,12 +175,6 @@ namespace AxionFrame
         private const string ReportTraceFrameMembers = "frame.members";
         private const string ReportTraceFrameNaming = "traceability.naming.frame";
 
-        private static readonly string[] AllowedBaselineProfiles =
-        {
-            "40x40x2.0_SHS",
-            "60x30x2.0_RHS"
-        };
-
         private readonly DeterministicNamingService _naming;
         private readonly IFrameGeometryExecutor _geometryExecutor;
 
@@ -375,24 +369,12 @@ namespace AxionFrame
 
             for (int i = 0; i < configuredProfiles.Count; i++)
             {
-                if (!IsBaselineProfile(configuredProfiles[i]))
+                string profileCode = configuredProfiles[i];
+                if (string.IsNullOrWhiteSpace(profileCode))
                 {
-                    throw new InvalidOperationException("Unsupported frame profile for baseline S3.2 behavior: " + configuredProfiles[i] + ".");
+                    throw new InvalidOperationException("Frame allowed profile contains an empty value.");
                 }
             }
-        }
-
-        private static bool IsBaselineProfile(string value)
-        {
-            for (int i = 0; i < AllowedBaselineProfiles.Length; i++)
-            {
-                if (string.Equals(AllowedBaselineProfiles[i], value, StringComparison.Ordinal))
-                {
-                    return true;
-                }
-            }
-
-            return false;
         }
 
         private FrameGeometryResult GenerateFrameGeometry(

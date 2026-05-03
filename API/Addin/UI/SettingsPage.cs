@@ -4,7 +4,7 @@ using SolidWorks.Interop.swpublished;
 using System;
 using System.Collections.Generic;
 using System.Globalization;
-using System.Linq;
+using System.IO;
 
 namespace AxionFrame
 {
@@ -18,6 +18,12 @@ namespace AxionFrame
         private const int HeightGroupId = 103;
         private const int PlateBraceGroupId = 104;
         private const int RuntimeGroupId = 105;
+
+        private const string ConfigProfileLibraryPath = "frame.profile.library.path";
+        private const string ConfigProfileSelectionStandard = "frame.profile.selection.standard";
+        private const string ConfigProfileSelectionType = "frame.profile.selection.type";
+        private const string ConfigProfileSelectionSize = "frame.profile.selection.size";
+        private const string ConfigAllowedProfiles = "frame.profile.selection.allowedProfiles";
 
         private int _nextControlId = 1000;
         private readonly ISldWorks _swApp;
@@ -36,6 +42,7 @@ namespace AxionFrame
         private readonly Dictionary<string, IPropertyManagerPageTextbox> _textboxBySettingsKey = new Dictionary<string, IPropertyManagerPageTextbox>(StringComparer.Ordinal);
         private readonly IDictionary<string, object> _initialSettings;
         private readonly Dictionary<string, string> _runtimeSettingsText = new Dictionary<string, string>(StringComparer.Ordinal);
+        private bool _isInternalValueUpdate;
 
         public SettingsPage(SwAddin addin)
         {
@@ -70,7 +77,7 @@ namespace AxionFrame
             }
 
             _swApp.SendMsgToUser2(
-                "PropertyManagerPage creation failed. Status code: " + errors.ToString(),
+                "PropertyManagerPage creation failed. Status code: " + errors.ToString(CultureInfo.InvariantCulture),
                 (int)swMessageBoxIcon_e.swMbStop,
                 (int)swMessageBoxBtn_e.swMbOk);
         }
@@ -78,10 +85,10 @@ namespace AxionFrame
         private void AddControls()
         {
             swPropertyPage.SetMessage3(
-                "Values are loaded from Config/GlobalParams.json when available; otherwise validated code defaults are used.",
+                "Configuration source priority: Config/GlobalParams.json first, validated defaults second.",
                 (int)swPropertyManagerPageMessageVisibility.swImportantMessageBox,
                 (int)swPropertyManagerPageMessageExpanded.swMessageBoxExpand,
-                "Configuration Baseline");
+                "Source Priority");
 
             _geometryTab = swPropertyPage.AddTab(GeometryTabId, "Geometry", string.Empty, 0);
             _runtimeTab = swPropertyPage.AddTab(RuntimeTabId, "Runtime", string.Empty, 0);
@@ -89,74 +96,81 @@ namespace AxionFrame
             int groupOptions = (int)swAddGroupBoxOptions_e.swGroupBoxOptions_Expanded |
                                (int)swAddGroupBoxOptions_e.swGroupBoxOptions_Visible;
 
-            _frameGroup = (IPropertyManagerPageGroup)_geometryTab.AddGroupBox(FrameGroupId, "Frame Defaults", groupOptions);
-            _pivotGroup = (IPropertyManagerPageGroup)_geometryTab.AddGroupBox(PivotGroupId, "Pivot Defaults", groupOptions);
-            _heightGroup = (IPropertyManagerPageGroup)_geometryTab.AddGroupBox(HeightGroupId, "Height Defaults", groupOptions);
-            _plateBraceGroup = (IPropertyManagerPageGroup)_geometryTab.AddGroupBox(PlateBraceGroupId, "Plate/Brace Defaults", groupOptions);
-            _runtimeGroup = (IPropertyManagerPageGroup)_runtimeTab.AddGroupBox(RuntimeGroupId, "Exports/Validation/Run Defaults", groupOptions);
+            _frameGroup = (IPropertyManagerPageGroup)_geometryTab.AddGroupBox(FrameGroupId, "Frame Settings", groupOptions);
+            _pivotGroup = (IPropertyManagerPageGroup)_geometryTab.AddGroupBox(PivotGroupId, "Pivot Settings", groupOptions);
+            _heightGroup = (IPropertyManagerPageGroup)_geometryTab.AddGroupBox(HeightGroupId, "Height Settings", groupOptions);
+            _plateBraceGroup = (IPropertyManagerPageGroup)_geometryTab.AddGroupBox(PlateBraceGroupId, "Plate/Brace Settings", groupOptions);
+            _runtimeGroup = (IPropertyManagerPageGroup)_runtimeTab.AddGroupBox(RuntimeGroupId, "Export/Validation/Run Settings", groupOptions);
 
-            AddFrameDefaults();
-            AddPivotDefaults();
-            AddHeightDefaults();
-            AddPlateBraceDefaults();
-            AddRuntimeDefaults();
+            AddFrameSettings();
+            AddPivotSettings();
+            AddHeightSettings();
+            AddPlateBraceSettings();
+            AddRuntimeSettings();
+            RefreshProfileSelectionFromLibrary(true);
         }
 
-        private void AddFrameDefaults()
+        private void AddFrameSettings()
         {
-            AddSettingTextbox(_frameGroup, "frame.layout.primary.memberExtentMin", "mm");
-            AddSettingTextbox(_frameGroup, "frame.layout.primary.memberExtentMax", "mm");
-            AddSettingTextbox(_frameGroup, "frame.layout.primary.placementTolerance", "mm");
-            AddSettingTextbox(_frameGroup, "frame.layout.primary.tableWidth", "mm");
-            AddSettingTextbox(_frameGroup, "frame.layout.primary.tableHeight", "mm");
-            AddSettingTextbox(_frameGroup, "frame.profile.selection.allowedProfiles", "approved baseline profile set");
-            AddSettingTextbox(_frameGroup, "frame.profile.selection.dimensionTolerance", "mm");
-            AddSettingTextbox(_frameGroup, "frame.naming.ruleSet", "deterministic naming baseline");
+            AddSettingTextbox(_frameGroup, "frame.layout.primary.memberExtentMin", "Frame Minimum Member Extent (mm)", "Minimum frame member extent.");
+            AddSettingTextbox(_frameGroup, "frame.layout.primary.memberExtentMax", "Frame Maximum Member Extent (mm)", "Maximum frame member extent.");
+            AddSettingTextbox(_frameGroup, "frame.layout.primary.placementTolerance", "Frame Placement Tolerance (mm)", "Placement tolerance.");
+            AddSettingTextbox(_frameGroup, "frame.layout.primary.tableWidth", "Table Width (mm)", "Overall table width.");
+            AddSettingTextbox(_frameGroup, "frame.layout.primary.tableHeight", "Table Height (mm)", "Overall table height.");
+
+            AddSettingTextbox(_frameGroup, ConfigProfileLibraryPath, "Profile Library Address", "SolidWorks weldment profile library folder path.");
+            AddSettingTextbox(_frameGroup, ConfigProfileSelectionStandard, "Profile Standard", "Example: ISO, ANSI, DIN.");
+            AddSettingTextbox(_frameGroup, ConfigProfileSelectionType, "Profile Type", "Example: SHS, RHS, L, C.");
+            AddSettingTextbox(_frameGroup, ConfigProfileSelectionSize, "Profile Size", "Example: 40x40x2.0.");
+            AddSettingTextbox(_frameGroup, ConfigAllowedProfiles, "Selected Profile Code (CSV)", "Resolved profile code list used at build time.");
+            AddSettingTextbox(_frameGroup, "frame.profile.selection.dimensionTolerance", "Profile Dimension Tolerance (mm)", "Allowed profile dimension tolerance.");
+            AddSettingTextbox(_frameGroup, "frame.naming.ruleSet", "Frame Naming Rule Set", "Deterministic naming baseline.");
         }
 
-        private void AddPivotDefaults()
+        private void AddPivotSettings()
         {
-            AddSettingTextbox(_pivotGroup, "pivot.geometry.primary.axisLocationMin", "mm");
-            AddSettingTextbox(_pivotGroup, "pivot.geometry.primary.axisLocationMax", "mm");
-            AddSettingTextbox(_pivotGroup, "pivot.geometry.primary.alignmentTolerance", "mm");
-            AddSettingTextbox(_pivotGroup, "pivot.hole.strategy.diameterMin", "mm");
-            AddSettingTextbox(_pivotGroup, "pivot.hole.strategy.diameterMax", "mm");
-            AddSettingTextbox(_pivotGroup, "pivot.hole.strategy.positionTolerance", "mm");
-            AddSettingTextbox(_pivotGroup, "pivot.naming.mates", "deterministic naming baseline");
+            AddSettingTextbox(_pivotGroup, "pivot.geometry.primary.axisLocationMin", "Pivot Axis Location Min (mm)", "Minimum axis location.");
+            AddSettingTextbox(_pivotGroup, "pivot.geometry.primary.axisLocationMax", "Pivot Axis Location Max (mm)", "Maximum axis location.");
+            AddSettingTextbox(_pivotGroup, "pivot.geometry.primary.alignmentTolerance", "Pivot Alignment Tolerance (mm)", "Axis alignment tolerance.");
+            AddSettingTextbox(_pivotGroup, "pivot.hole.strategy.diameterMin", "Pivot Hole Diameter Min (mm)", "Minimum hole diameter.");
+            AddSettingTextbox(_pivotGroup, "pivot.hole.strategy.diameterMax", "Pivot Hole Diameter Max (mm)", "Maximum hole diameter.");
+            AddSettingTextbox(_pivotGroup, "pivot.hole.strategy.positionTolerance", "Pivot Hole Position Tolerance (mm)", "Hole position tolerance.");
+            AddSettingTextbox(_pivotGroup, "pivot.naming.mates", "Pivot Naming Rule Set", "Deterministic naming baseline.");
         }
 
-        private void AddHeightDefaults()
+        private void AddHeightSettings()
         {
-            AddSettingTextbox(_heightGroup, "height.supportedConfigurations.values", "mm");
-            AddSettingTextbox(_heightGroup, "height.indexing.activation.requiredCount", "count");
-            AddSettingTextbox(_heightGroup, "height.indexing.activation.strictDeterminism", "boolean");
-            AddSettingTextbox(_heightGroup, "height.validation.supportedSet", "mm");
-            AddSettingTextbox(_heightGroup, "height.validation.dimensionTolerance", "mm");
+            AddSettingTextbox(_heightGroup, "height.supportedConfigurations.values", "Supported Heights (CSV mm)", "Supported heights in millimeters.");
+            AddSettingTextbox(_heightGroup, "height.indexing.activation.requiredCount", "Height Required Count", "Expected number of heights.");
+            AddSettingTextbox(_heightGroup, "height.indexing.activation.strictDeterminism", "Strict Determinism (true/false)", "Enforce deterministic activation.");
+            AddSettingTextbox(_heightGroup, "height.validation.supportedSet", "Height Validation Set (CSV mm)", "Validation set for heights.");
+            AddSettingTextbox(_heightGroup, "height.validation.dimensionTolerance", "Height Dimension Tolerance (mm)", "Height validation tolerance.");
         }
 
-        private void AddPlateBraceDefaults()
+        private void AddPlateBraceSettings()
         {
-            AddSettingTextbox(_plateBraceGroup, "plateBrace.dimensions.primary.thicknessMin", "mm");
-            AddSettingTextbox(_plateBraceGroup, "plateBrace.dimensions.primary.thicknessMax", "mm");
-            AddSettingTextbox(_plateBraceGroup, "plateBrace.dimensions.primary.dimensionTolerance", "mm");
-            AddSettingTextbox(_plateBraceGroup, "plateBrace.export.dxfEligible", "boolean");
-            AddSettingTextbox(_plateBraceGroup, "plateBrace.naming.ruleSet", "deterministic naming baseline");
+            AddSettingTextbox(_plateBraceGroup, "plateBrace.dimensions.primary.thicknessMin", "Plate/Brace Thickness Min (mm)", "Minimum plate/brace thickness.");
+            AddSettingTextbox(_plateBraceGroup, "plateBrace.dimensions.primary.thicknessMax", "Plate/Brace Thickness Max (mm)", "Maximum plate/brace thickness.");
+            AddSettingTextbox(_plateBraceGroup, "plateBrace.dimensions.primary.dimensionTolerance", "Plate/Brace Dimension Tolerance (mm)", "Dimension tolerance.");
+            AddSettingTextbox(_plateBraceGroup, "plateBrace.export.dxfEligible", "DXF Eligible (true/false)", "Whether DXF export is eligible.");
+            AddSettingTextbox(_plateBraceGroup, "plateBrace.naming.ruleSet", "Plate/Brace Naming Rule Set", "Deterministic naming baseline.");
         }
 
-        private void AddRuntimeDefaults()
+        private void AddRuntimeSettings()
         {
-            AddSettingTextbox(_runtimeGroup, "exports.step.enabled", "boolean");
-            AddSettingTextbox(_runtimeGroup, "exports.dxf.enabled", "boolean");
-            AddSettingTextbox(_runtimeGroup, "exports.bom.enabled", "boolean");
-            AddSettingTextbox(_runtimeGroup, "exports.validationReport.enabled", "boolean");
-            AddSettingTextbox(_runtimeGroup, "validation.mode", "BuildOnly, FinalOutput, StrictRelease");
-            AddSettingTextbox(_runtimeGroup, "validation.stopOnCriticalFailure", "boolean");
-            AddSettingTextbox(_runtimeGroup, "run.packageOutputs", "boolean");
+            AddSettingTextbox(_runtimeGroup, "exports.step.enabled", "Export STEP Enabled (true/false)", "Enable STEP output.");
+            AddSettingTextbox(_runtimeGroup, "exports.dxf.enabled", "Export DXF Enabled (true/false)", "Enable DXF output.");
+            AddSettingTextbox(_runtimeGroup, "exports.bom.enabled", "Export BOM Enabled (true/false)", "Enable BOM output.");
+            AddSettingTextbox(_runtimeGroup, "exports.validationReport.enabled", "Validation Report Enabled (true/false)", "Enable validation report output.");
+            AddSettingTextbox(_runtimeGroup, "validation.mode", "Validation Mode", "BuildOnly, FinalOutput, StrictRelease.");
+            AddSettingTextbox(_runtimeGroup, "validation.stopOnCriticalFailure", "Stop On Critical Failure (true/false)", "Stop build on critical validation failure.");
+            AddSettingTextbox(_runtimeGroup, "run.packageOutputs", "Package Outputs (true/false)", "Package output artifacts.");
         }
 
         private IPropertyManagerPageTextbox AddSettingTextbox(
             IPropertyManagerPageGroup group,
             string key,
+            string label,
             string tooltip)
         {
             short controlType = (short)swPropertyManagerPageControlType_e.swControlType_Textbox;
@@ -168,10 +182,10 @@ namespace AxionFrame
             IPropertyManagerPageTextbox textbox = (IPropertyManagerPageTextbox)group.AddControl(
                 controlId,
                 controlType,
-                key,
+                label,
                 align,
                 options,
-                tooltip);
+                tooltip + " | config key: " + key);
 
             if (textbox != null)
             {
@@ -188,6 +202,7 @@ namespace AxionFrame
         public void Show()
         {
             ApplyRuntimeStateToControls();
+            RefreshProfileSelectionFromLibrary(true);
             if (swPropertyPage != null)
             {
                 swPropertyPage.Show();
@@ -219,6 +234,11 @@ namespace AxionFrame
                 return;
             }
 
+            if (_isInternalValueUpdate)
+            {
+                return;
+            }
+
             string normalizedValue = value == null ? string.Empty : value.Trim();
             _runtimeSettingsText[key] = normalizedValue;
 
@@ -226,6 +246,14 @@ namespace AxionFrame
             if (_textboxBySettingsKey.TryGetValue(key, out textbox) && textbox != null && !string.Equals(textbox.Text, normalizedValue, StringComparison.Ordinal))
             {
                 textbox.Text = normalizedValue;
+            }
+
+            if (string.Equals(key, ConfigProfileLibraryPath, StringComparison.Ordinal) ||
+                string.Equals(key, ConfigProfileSelectionStandard, StringComparison.Ordinal) ||
+                string.Equals(key, ConfigProfileSelectionType, StringComparison.Ordinal) ||
+                string.Equals(key, ConfigProfileSelectionSize, StringComparison.Ordinal))
+            {
+                RefreshProfileSelectionFromLibrary(false);
             }
         }
 
@@ -257,31 +285,36 @@ namespace AxionFrame
             }
 
             object value;
-            if (!_initialSettings.TryGetValue(key, out value) || value == null)
+            if (_initialSettings.TryGetValue(key, out value) && value != null)
             {
-                return string.Empty;
+                List<string> stringValues = value as List<string>;
+                if (stringValues != null)
+                {
+                    return JoinStringList(stringValues);
+                }
+
+                List<decimal> decimalValues = value as List<decimal>;
+                if (decimalValues != null)
+                {
+                    return JoinDecimalList(decimalValues);
+                }
+
+                decimal decimalValue;
+                if (value is decimal)
+                {
+                    decimalValue = (decimal)value;
+                    return decimalValue.ToString(CultureInfo.InvariantCulture);
+                }
+
+                return Convert.ToString(value, CultureInfo.InvariantCulture);
             }
 
-            List<string> stringValues = value as List<string>;
-            if (stringValues != null)
+            if (string.Equals(key, ConfigProfileLibraryPath, StringComparison.Ordinal))
             {
-                return string.Join(",", stringValues.ToArray());
+                return ResolveDefaultProfileLibraryPath();
             }
 
-            List<decimal> decimalValues = value as List<decimal>;
-            if (decimalValues != null)
-            {
-                return string.Join(",", decimalValues.Select(v => v.ToString(CultureInfo.InvariantCulture)).ToArray());
-            }
-
-            decimal decimalValue;
-            if (value is decimal)
-            {
-                decimalValue = (decimal)value;
-                return decimalValue.ToString(CultureInfo.InvariantCulture);
-            }
-
-            return Convert.ToString(value, CultureInfo.InvariantCulture);
+            return string.Empty;
         }
 
         private void ApplyRuntimeStateToControls()
@@ -311,6 +344,362 @@ namespace AxionFrame
                 }
 
                 _runtimeSettingsText[entry.Key] = entry.Value.Text == null ? string.Empty : entry.Value.Text.Trim();
+            }
+        }
+
+        private void RefreshProfileSelectionFromLibrary(bool initializeFromResolvedProfileCode)
+        {
+            string profileLibraryPath = GetRuntimeValue(ConfigProfileLibraryPath);
+            if (string.IsNullOrWhiteSpace(profileLibraryPath))
+            {
+                profileLibraryPath = ResolveDefaultProfileLibraryPath();
+            }
+
+            if (!string.IsNullOrWhiteSpace(profileLibraryPath))
+            {
+                SetRuntimeValue(ConfigProfileLibraryPath, profileLibraryPath);
+            }
+
+            List<ProfileLibraryEntry> profileEntries = LoadProfilesFromLibrary(profileLibraryPath);
+            if (profileEntries.Count == 0)
+            {
+                return;
+            }
+
+            string selectedStandard = GetRuntimeValue(ConfigProfileSelectionStandard);
+            string selectedType = GetRuntimeValue(ConfigProfileSelectionType);
+            string selectedSize = GetRuntimeValue(ConfigProfileSelectionSize);
+
+            if (initializeFromResolvedProfileCode)
+            {
+                TryResolveSelectionFromProfileCode(profileEntries, GetFirstAllowedProfileCode(), out selectedStandard, out selectedType, out selectedSize);
+            }
+
+            if (!ContainsStandard(profileEntries, selectedStandard))
+            {
+                selectedStandard = profileEntries[0].Standard;
+            }
+
+            List<ProfileLibraryEntry> typeCandidates = FilterByStandard(profileEntries, selectedStandard);
+            if (!ContainsType(typeCandidates, selectedType))
+            {
+                selectedType = typeCandidates[0].Type;
+            }
+
+            List<ProfileLibraryEntry> sizeCandidates = FilterByType(typeCandidates, selectedType);
+            if (!ContainsSize(sizeCandidates, selectedSize))
+            {
+                selectedSize = sizeCandidates[0].Size;
+            }
+
+            string profileCode = selectedSize + "_" + selectedType;
+
+            SetRuntimeValue(ConfigProfileSelectionStandard, selectedStandard);
+            SetRuntimeValue(ConfigProfileSelectionType, selectedType);
+            SetRuntimeValue(ConfigProfileSelectionSize, selectedSize);
+            SetRuntimeValue(ConfigAllowedProfiles, profileCode);
+        }
+
+        private static List<ProfileLibraryEntry> LoadProfilesFromLibrary(string libraryPath)
+        {
+            List<ProfileLibraryEntry> entries = new List<ProfileLibraryEntry>();
+            if (string.IsNullOrWhiteSpace(libraryPath) || !Directory.Exists(libraryPath))
+            {
+                return entries;
+            }
+
+            string[] standardDirectories = Directory.GetDirectories(libraryPath);
+            for (int standardIndex = 0; standardIndex < standardDirectories.Length; standardIndex++)
+            {
+                string standardDirectoryPath = standardDirectories[standardIndex];
+                string standardName = Path.GetFileName(standardDirectoryPath);
+                if (string.IsNullOrWhiteSpace(standardName))
+                {
+                    continue;
+                }
+
+                string[] typeDirectories = Directory.GetDirectories(standardDirectoryPath);
+                for (int typeIndex = 0; typeIndex < typeDirectories.Length; typeIndex++)
+                {
+                    string typeDirectoryPath = typeDirectories[typeIndex];
+                    string typeName = Path.GetFileName(typeDirectoryPath);
+                    if (string.IsNullOrWhiteSpace(typeName))
+                    {
+                        continue;
+                    }
+
+                    string[] profileFiles = Directory.GetFiles(typeDirectoryPath, "*.sldlfp");
+                    for (int profileIndex = 0; profileIndex < profileFiles.Length; profileIndex++)
+                    {
+                        string profileFilePath = profileFiles[profileIndex];
+                        string sizeName = Path.GetFileNameWithoutExtension(profileFilePath);
+                        if (string.IsNullOrWhiteSpace(sizeName))
+                        {
+                            continue;
+                        }
+
+                        entries.Add(new ProfileLibraryEntry(standardName, typeName, sizeName));
+                    }
+                }
+            }
+
+            entries.Sort(ProfileLibraryEntry.Compare);
+            return entries;
+        }
+
+        private void TryResolveSelectionFromProfileCode(
+            IList<ProfileLibraryEntry> entries,
+            string profileCode,
+            out string standard,
+            out string type,
+            out string size)
+        {
+            standard = string.Empty;
+            type = string.Empty;
+            size = string.Empty;
+
+            if (entries == null || entries.Count == 0 || string.IsNullOrWhiteSpace(profileCode))
+            {
+                return;
+            }
+
+            int splitIndex = profileCode.LastIndexOf('_');
+            if (splitIndex <= 0 || splitIndex >= profileCode.Length - 1)
+            {
+                return;
+            }
+
+            string profileSize = profileCode.Substring(0, splitIndex);
+            string profileType = profileCode.Substring(splitIndex + 1);
+
+            for (int i = 0; i < entries.Count; i++)
+            {
+                ProfileLibraryEntry entry = entries[i];
+                if (string.Equals(entry.Type, profileType, StringComparison.OrdinalIgnoreCase) &&
+                    string.Equals(entry.Size, profileSize, StringComparison.OrdinalIgnoreCase))
+                {
+                    standard = entry.Standard;
+                    type = entry.Type;
+                    size = entry.Size;
+                    return;
+                }
+            }
+        }
+
+        private string GetFirstAllowedProfileCode()
+        {
+            string csv = GetRuntimeValue(ConfigAllowedProfiles);
+            if (string.IsNullOrWhiteSpace(csv))
+            {
+                return string.Empty;
+            }
+
+            string[] tokens = csv.Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries);
+            if (tokens.Length == 0)
+            {
+                return string.Empty;
+            }
+
+            return tokens[0].Trim();
+        }
+
+        private string ResolveDefaultProfileLibraryPath()
+        {
+            try
+            {
+                string commonData = Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData);
+                string[] candidates =
+                {
+                    Path.Combine(commonData, "SOLIDWORKS", "SOLIDWORKS 2026", "weldment profiles"),
+                    Path.Combine(commonData, "SOLIDWORKS", "SOLIDWORKS 2025", "weldment profiles"),
+                    Path.Combine(commonData, "SOLIDWORKS", "SOLIDWORKS 2024", "weldment profiles")
+                };
+
+                for (int i = 0; i < candidates.Length; i++)
+                {
+                    if (Directory.Exists(candidates[i]))
+                    {
+                        return candidates[i];
+                    }
+                }
+
+                return candidates[0];
+            }
+            catch
+            {
+                return string.Empty;
+            }
+        }
+
+        private string GetRuntimeValue(string key)
+        {
+            string value;
+            return _runtimeSettingsText.TryGetValue(key, out value) ? value : string.Empty;
+        }
+
+        private void SetRuntimeValue(string key, string value)
+        {
+            string normalized = value == null ? string.Empty : value.Trim();
+            _runtimeSettingsText[key] = normalized;
+
+            IPropertyManagerPageTextbox textbox;
+            if (!_textboxBySettingsKey.TryGetValue(key, out textbox) || textbox == null)
+            {
+                return;
+            }
+
+            if (string.Equals(textbox.Text, normalized, StringComparison.Ordinal))
+            {
+                return;
+            }
+
+            _isInternalValueUpdate = true;
+            try
+            {
+                textbox.Text = normalized;
+            }
+            finally
+            {
+                _isInternalValueUpdate = false;
+            }
+        }
+
+        private static string JoinStringList(IList<string> values)
+        {
+            if (values == null || values.Count == 0)
+            {
+                return string.Empty;
+            }
+
+            return string.Join(",", values);
+        }
+
+        private static string JoinDecimalList(IList<decimal> values)
+        {
+            if (values == null || values.Count == 0)
+            {
+                return string.Empty;
+            }
+
+            string[] tokens = new string[values.Count];
+            for (int i = 0; i < values.Count; i++)
+            {
+                tokens[i] = values[i].ToString(CultureInfo.InvariantCulture);
+            }
+
+            return string.Join(",", tokens);
+        }
+
+        private static bool ContainsStandard(IList<ProfileLibraryEntry> entries, string standard)
+        {
+            for (int i = 0; i < entries.Count; i++)
+            {
+                if (string.Equals(entries[i].Standard, standard, StringComparison.OrdinalIgnoreCase))
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        private static bool ContainsType(IList<ProfileLibraryEntry> entries, string type)
+        {
+            for (int i = 0; i < entries.Count; i++)
+            {
+                if (string.Equals(entries[i].Type, type, StringComparison.OrdinalIgnoreCase))
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        private static bool ContainsSize(IList<ProfileLibraryEntry> entries, string size)
+        {
+            for (int i = 0; i < entries.Count; i++)
+            {
+                if (string.Equals(entries[i].Size, size, StringComparison.OrdinalIgnoreCase))
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        private static List<ProfileLibraryEntry> FilterByStandard(IList<ProfileLibraryEntry> entries, string standard)
+        {
+            List<ProfileLibraryEntry> result = new List<ProfileLibraryEntry>();
+            for (int i = 0; i < entries.Count; i++)
+            {
+                if (string.Equals(entries[i].Standard, standard, StringComparison.OrdinalIgnoreCase))
+                {
+                    result.Add(entries[i]);
+                }
+            }
+
+            return result;
+        }
+
+        private static List<ProfileLibraryEntry> FilterByType(IList<ProfileLibraryEntry> entries, string type)
+        {
+            List<ProfileLibraryEntry> result = new List<ProfileLibraryEntry>();
+            for (int i = 0; i < entries.Count; i++)
+            {
+                if (string.Equals(entries[i].Type, type, StringComparison.OrdinalIgnoreCase))
+                {
+                    result.Add(entries[i]);
+                }
+            }
+
+            return result;
+        }
+
+        private sealed class ProfileLibraryEntry
+        {
+            public ProfileLibraryEntry(string standard, string type, string size)
+            {
+                Standard = standard ?? string.Empty;
+                Type = type ?? string.Empty;
+                Size = size ?? string.Empty;
+            }
+
+            public string Standard { get; private set; }
+            public string Type { get; private set; }
+            public string Size { get; private set; }
+
+            public static int Compare(ProfileLibraryEntry left, ProfileLibraryEntry right)
+            {
+                if (left == null && right == null)
+                {
+                    return 0;
+                }
+
+                if (left == null)
+                {
+                    return -1;
+                }
+
+                if (right == null)
+                {
+                    return 1;
+                }
+
+                int standard = string.Compare(left.Standard, right.Standard, StringComparison.OrdinalIgnoreCase);
+                if (standard != 0)
+                {
+                    return standard;
+                }
+
+                int type = string.Compare(left.Type, right.Type, StringComparison.OrdinalIgnoreCase);
+                if (type != 0)
+                {
+                    return type;
+                }
+
+                return string.Compare(left.Size, right.Size, StringComparison.OrdinalIgnoreCase);
             }
         }
     }

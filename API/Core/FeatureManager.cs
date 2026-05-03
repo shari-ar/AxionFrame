@@ -236,7 +236,11 @@ namespace AxionFrame
             schema.Add(DecimalField("frame.layout.primary.tableWidth", 700.0m, 300.0m, 3000.0m, "FRM-001", "VAL-FRM-001-LAYOUT", ValidationSeverity.Critical, true));
             schema.Add(DecimalField("frame.layout.primary.tableHeight", 1000.0m, 300.0m, 3000.0m, "FRM-001", "VAL-FRM-001-LAYOUT", ValidationSeverity.Critical, true));
 
-            schema.Add(ArrayStringField("frame.profile.selection.allowedProfiles", BaselineProfiles, BaselineProfiles, "FRM-002", "VAL-FRM-002-PROFILE", ValidationSeverity.Critical, true));
+            schema.Add(StringField("frame.profile.library.path", string.Empty, "FRM-002", "VAL-FRM-002-PROFILE-LIBRARY", ValidationSeverity.Warning, false));
+            schema.Add(StringField("frame.profile.selection.standard", string.Empty, "FRM-002", "VAL-FRM-002-PROFILE-STANDARD", ValidationSeverity.Warning, false));
+            schema.Add(StringField("frame.profile.selection.type", string.Empty, "FRM-002", "VAL-FRM-002-PROFILE-TYPE", ValidationSeverity.Warning, false));
+            schema.Add(StringField("frame.profile.selection.size", string.Empty, "FRM-002", "VAL-FRM-002-PROFILE-SIZE", ValidationSeverity.Warning, false));
+            schema.Add(ArrayStringField("frame.profile.selection.allowedProfiles", BaselineProfiles, new string[0], "FRM-002", "VAL-FRM-002-PROFILE", ValidationSeverity.Critical, true));
             schema.Add(DecimalField("frame.profile.selection.dimensionTolerance", 0.2m, 0.0m, 0.2m, "FRM-002", "VAL-FRM-002-PROFILE", ValidationSeverity.Critical, true));
             schema.Add(EnumField("frame.naming.ruleSet", DeterministicNamingService.RuleSetStandardV1, SupportedNamingRuleSets, "FRM-003", "VAL-FRM-003-NAMING", ValidationSeverity.Warning, false));
 
@@ -314,6 +318,17 @@ namespace AxionFrame
             bool blocking)
         {
             return new SchemaFieldDefinition(key, ConfigValueType.Boolean, true, defaultValue, ruleId, validatorId, severity, blocking);
+        }
+
+        private static SchemaFieldDefinition StringField(
+            string key,
+            string defaultValue,
+            string ruleId,
+            string validatorId,
+            ValidationSeverity severity,
+            bool blocking)
+        {
+            return new SchemaFieldDefinition(key, ConfigValueType.String, true, defaultValue ?? string.Empty, ruleId, validatorId, severity, blocking);
         }
 
         private static SchemaFieldDefinition EnumField(

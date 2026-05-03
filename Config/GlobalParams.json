@@ -10,7 +10,13 @@
       }
     },
     "profile": {
+      "library": {
+        "path": "C:\\ProgramData\\SOLIDWORKS\\SOLIDWORKS 2026\\weldment profiles"
+      },
       "selection": {
+        "standard": "ISO",
+        "type": "SHS",
+        "size": "40x40x2.0",
         "allowedProfiles": [
           "40x40x2.0_SHS",
           "60x30x2.0_RHS"

@@ -76,6 +76,11 @@ namespace AxionFrame
 
         public BuildExecutionResult ExecuteBuild(string configPath, string outputRootPath)
         {
+            return ExecuteBuild(configPath, outputRootPath, null);
+        }
+
+        public BuildExecutionResult ExecuteBuild(string configPath, string outputRootPath, IDictionary<string, string> runtimeOverrides)
+        {
             // Keep stage execution order fixed for deterministic audit logs and repeatable validation evidence.
             string resolvedConfigPath = ResolveConfigurationPath(configPath);
             string resolvedOutputRoot = ResolveOutputRoot(outputRootPath, resolvedConfigPath);
@@ -102,7 +107,14 @@ namespace AxionFrame
                 BuildStageKind.Validate,
                 delegate(StringBuilder details)
                 {
-                    validationResult = _featureManager.LoadAndValidate(resolvedConfigPath);
+                    if (runtimeOverrides != null && runtimeOverrides.Count > 0)
+                    {
+                        validationResult = _featureManager.LoadAndValidate(resolvedConfigPath, runtimeOverrides);
+                    }
+                    else
+                    {
+                        validationResult = _featureManager.LoadAndValidate(resolvedConfigPath);
+                    }
                     if (validationResult != null)
                     {
                         configHash = ComputeConfigHash(validationResult.NormalizedConfig);

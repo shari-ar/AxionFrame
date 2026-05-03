@@ -226,7 +226,10 @@ namespace AxionFrame
                     new PivotModule(naming),
                     new HeightAdjustModule(naming),
                     new PlateBraceModule(naming));
-                BuildExecutionResult result = workflowEngine.ExecuteBuild(null, null);
+                BuildExecutionResult result = workflowEngine.ExecuteBuild(
+                    null,
+                    null,
+                    ppage == null ? null : ppage.CaptureRuntimeOverrides());
 
                 int icon = result.IsSuccessful ? (int)swMessageBoxIcon_e.swMbInformation : (int)swMessageBoxIcon_e.swMbStop;
                 iSwApp.SendMsgToUser2(result.ToDisplaySummary(), icon, (int)swMessageBoxBtn_e.swMbOk);
@@ -304,10 +307,7 @@ namespace AxionFrame
 
         public int EnableSettings()
         {
-            if (iSwApp.ActiveDoc != null)
-                return 1;
-            else
-                return 0;
+            return 1;
         }
 
         public void FlyoutCallback()

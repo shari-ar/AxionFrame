@@ -184,8 +184,14 @@ namespace AxionFrame
 
         public ConfigurationProcessingResult LoadAndValidate(string configPath)
         {
+            return LoadAndValidate(configPath, null);
+        }
+
+        public ConfigurationProcessingResult LoadAndValidate(string configPath, IDictionary<string, string> runtimeOverrides)
+        {
             List<ValidationMessage> messages = new List<ValidationMessage>();
             Dictionary<string, object> sourceValues = LoadFlatConfiguration(configPath, messages);
+            ApplyRuntimeOverrides(sourceValues, runtimeOverrides);
             Dictionary<string, object> normalizedValues = new Dictionary<string, object>(StringComparer.Ordinal);
 
             for (int i = 0; i < _schema.Count; i++)
@@ -198,6 +204,26 @@ namespace AxionFrame
             SortMessages(messages);
 
             return new ConfigurationProcessingResult(configPath, normalizedValues, messages);
+        }
+
+        private static void ApplyRuntimeOverrides(
+            IDictionary<string, object> sourceValues,
+            IDictionary<string, string> runtimeOverrides)
+        {
+            if (sourceValues == null || runtimeOverrides == null)
+            {
+                return;
+            }
+
+            foreach (KeyValuePair<string, string> entry in runtimeOverrides)
+            {
+                if (string.IsNullOrWhiteSpace(entry.Key))
+                {
+                    continue;
+                }
+
+                sourceValues[entry.Key] = entry.Value == null ? string.Empty : entry.Value.Trim();
+            }
         }
 
         private static IList<SchemaFieldDefinition> BuildDefaultSchema()
@@ -742,6 +768,13 @@ namespace AxionFrame
 
                 case ConfigValueType.ArrayString:
                     {
+                        string csvString = sourceValue as string;
+                        if (csvString != null)
+                        {
+                            convertedValue = ParseStringArrayFromCsv(csvString);
+                            return true;
+                        }
+
                         List<string> values = new List<string>();
                         IList items;
                         if (!TryExtractEnumerable(sourceValue, out items))
@@ -768,6 +801,20 @@ namespace AxionFrame
 
                 case ConfigValueType.ArrayDecimal:
                     {
+                        string csvString = sourceValue as string;
+                        if (csvString != null)
+                        {
+                            List<decimal> csvValues;
+                            if (!TryParseDecimalArrayFromCsv(csvString, out csvValues))
+                            {
+                                conversionError = "Actual value is not a valid decimal CSV array: " + FormatValue(sourceValue) + ".";
+                                return false;
+                            }
+
+                            convertedValue = csvValues;
+                            return true;
+                        }
+
                         List<decimal> values = new List<decimal>();
                         IList items;
                         if (!TryExtractEnumerable(sourceValue, out items))
@@ -841,6 +888,42 @@ namespace AxionFrame
             }
 
             return false;
+        }
+
+        private static List<string> ParseStringArrayFromCsv(string csvString)
+        {
+            List<string> values = new List<string>();
+            string[] rawTokens = csvString.Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries);
+            for (int i = 0; i < rawTokens.Length; i++)
+            {
+                string token = rawTokens[i].Trim();
+                if (!string.IsNullOrWhiteSpace(token))
+                {
+                    values.Add(token);
+                }
+            }
+
+            return values;
+        }
+
+        private static bool TryParseDecimalArrayFromCsv(string csvString, out List<decimal> values)
+        {
+            values = new List<decimal>();
+            string[] rawTokens = csvString.Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries);
+            for (int i = 0; i < rawTokens.Length; i++)
+            {
+                string token = rawTokens[i].Trim();
+                decimal parsed;
+                if (!decimal.TryParse(token, NumberStyles.Float, CultureInfo.InvariantCulture, out parsed))
+                {
+                    values = null;
+                    return false;
+                }
+
+                values.Add(parsed);
+            }
+
+            return true;
         }
 
         private static bool ValidateAllowedRanges(SchemaFieldDefinition field, object value, out string validationError)

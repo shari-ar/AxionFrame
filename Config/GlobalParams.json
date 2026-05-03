@@ -4,7 +4,9 @@
       "primary": {
         "memberExtentMin": 620.0,
         "memberExtentMax": 980.0,
-        "placementTolerance": 0.5
+        "placementTolerance": 0.5,
+        "tableWidth": 700.0,
+        "tableHeight": 1000.0
       }
     },
     "profile": {

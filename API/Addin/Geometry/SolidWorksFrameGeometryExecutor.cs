@@ -3,6 +3,7 @@ using SolidWorks.Interop.swconst;
 using System.IO;
 using System.Runtime.InteropServices;
 using System;
+using System.Reflection;
 
 namespace AxionFrame
 {
@@ -84,7 +85,7 @@ namespace AxionFrame
 
             part.ClearSelection2(true);
             part.SketchManager.InsertSketch(true);
-            ApplyStructuralMemberProfile(part, request, new[] { topSegment, diagonalSegment, bottomSegment, braceTop, braceBottom });
+            ApplyStructuralMemberProfile(part, request, topSegment, diagonalSegment, bottomSegment, braceTop, braceBottom);
             part.ForceRebuild3(false);
 
             string note =
@@ -104,7 +105,14 @@ namespace AxionFrame
             return millimeters * MillimetersToMeters;
         }
 
-        private static void ApplyStructuralMemberProfile(IModelDoc2 part, FrameGeometryRequest request, SketchSegment[] pathSegments)
+        private static void ApplyStructuralMemberProfile(
+            IModelDoc2 part,
+            FrameGeometryRequest request,
+            SketchSegment topSegment,
+            SketchSegment diagonalSegment,
+            SketchSegment bottomSegment,
+            SketchSegment braceTop,
+            SketchSegment braceBottom)
         {
             if (part == null)
             {
@@ -114,11 +122,6 @@ namespace AxionFrame
             if (request == null)
             {
                 throw new ArgumentNullException(nameof(request));
-            }
-
-            if (pathSegments == null || pathSegments.Length == 0)
-            {
-                throw new InvalidOperationException("No sketch segments were generated for structural profile application.");
             }
 
             if (string.IsNullOrWhiteSpace(request.ProfileLibraryPath) ||
@@ -140,21 +143,6 @@ namespace AxionFrame
                 throw new InvalidOperationException("Selected weldment profile file was not found: " + profilePath + ".");
             }
 
-            part.ClearSelection2(true);
-            for (int i = 0; i < pathSegments.Length; i++)
-            {
-                if (pathSegments[i] == null)
-                {
-                    continue;
-                }
-
-                bool selected = pathSegments[i].Select4(true, null);
-                if (!selected)
-                {
-                    throw new InvalidOperationException("Failed to select a sketch segment for structural member generation.");
-                }
-            }
-
             IFeatureManager featureManager = part.FeatureManager;
             if (featureManager == null)
             {
@@ -163,32 +151,133 @@ namespace AxionFrame
 
             featureManager.InsertWeldmentFeature();
 
+            // Match the proven manual workflow: create the structural member in two steps/groups.
+            Feature firstFeature = InsertStructuralMemberGroup(
+                part,
+                featureManager,
+                profilePath,
+                "Group1",
+                topSegment,
+                diagonalSegment,
+                bottomSegment);
+            if (firstFeature == null)
+            {
+                throw new InvalidOperationException("Structural member creation failed for Group1.");
+            }
+
+            Feature secondFeature = InsertStructuralMemberGroup(
+                part,
+                featureManager,
+                profilePath,
+                "Group2",
+                braceTop,
+                braceBottom);
+            if (secondFeature == null)
+            {
+                throw new InvalidOperationException("Structural member creation failed for Group2.");
+            }
+        }
+
+        private static Feature InsertStructuralMemberGroup(
+            IModelDoc2 part,
+            IFeatureManager featureManager,
+            string profilePath,
+            string groupName,
+            params SketchSegment[] segments)
+        {
+            if (segments == null || segments.Length == 0)
+            {
+                throw new InvalidOperationException("No segments were provided for structural member group generation.");
+            }
+
+            part.ClearSelection2(true);
+            int selectedCount = 0;
+            for (int i = 0; i < segments.Length; i++)
+            {
+                if (segments[i] == null)
+                {
+                    continue;
+                }
+
+                bool selected = segments[i].Select4(true, null);
+                if (!selected)
+                {
+                    throw new InvalidOperationException("Failed to select a sketch segment for structural member generation.");
+                }
+
+                selectedCount++;
+            }
+
+            if (selectedCount == 0)
+            {
+                throw new InvalidOperationException("No valid sketch segments were selected for structural member generation.");
+            }
+
             StructuralMemberGroup group = featureManager.CreateStructuralMemberGroup();
             if (group == null)
             {
                 throw new InvalidOperationException("Failed to create structural member group.");
             }
 
-            object[] selectedSegments = new object[pathSegments.Length];
-            for (int i = 0; i < pathSegments.Length; i++)
+            object[] selectedSegments = new object[selectedCount];
+            int segmentIndex = 0;
+            for (int i = 0; i < segments.Length; i++)
             {
-                selectedSegments[i] = pathSegments[i];
+                if (segments[i] != null)
+                {
+                    selectedSegments[segmentIndex++] = segments[i];
+                }
             }
 
             group.Segments = selectedSegments;
             group.ApplyCornerTreatment = true;
+            // Requested behavior: coped cut, protrusion allowed, profile angle 0 deg.
             group.CornerTreatmentType = 0;
+            TrySetGroupProperty(group, "AllowProtrusion", true);
+            TrySetGroupProperty(group, "Angle", 0.0d);
+            TrySetGroupProperty(group, "GroupName", groupName);
 
             object[] groups = new object[] { new DispatchWrapper(group) };
-            Feature feature = featureManager.InsertStructuralWeldment4(
+            return featureManager.InsertStructuralWeldment4(
                 profilePath,
                 0,
                 false,
                 groups);
+        }
 
-            if (feature == null)
+        private static void TrySetGroupProperty(StructuralMemberGroup group, string propertyName, object value)
+        {
+            if (group == null || string.IsNullOrWhiteSpace(propertyName))
             {
-                throw new InvalidOperationException("Structural member creation failed for profile path: " + profilePath + ".");
+                return;
+            }
+
+            PropertyInfo propertyInfo = group.GetType().GetProperty(propertyName, BindingFlags.Public | BindingFlags.Instance);
+            if (propertyInfo == null || !propertyInfo.CanWrite)
+            {
+                return;
+            }
+
+            try
+            {
+                object convertedValue = value;
+                if (value != null)
+                {
+                    Type targetType = propertyInfo.PropertyType;
+                    if (targetType.IsEnum)
+                    {
+                        convertedValue = Enum.ToObject(targetType, value);
+                    }
+                    else if (targetType != value.GetType())
+                    {
+                        convertedValue = Convert.ChangeType(value, targetType);
+                    }
+                }
+
+                propertyInfo.SetValue(group, convertedValue, null);
+            }
+            catch
+            {
             }
         }
     }

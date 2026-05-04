@@ -49,7 +49,7 @@ namespace AxionFrame
                 }
 
                 traceEvents.Add("doc.active=" + part.GetTitle());
-                traceEvents.Add("doc.type=" + part.GetType().ToString(CultureInfo.InvariantCulture));
+                traceEvents.Add("doc.type=" + ((object)part).GetType().FullName);
                 if (!SelectRightPlane(part))
                 {
                     throw new InvalidOperationException("Right Plane could not be selected.");
@@ -372,39 +372,11 @@ namespace AxionFrame
 
             try
             {
-                object startPoint = segment.GetStartPoint();
-                object endPoint = segment.GetEndPoint();
-                return "type=" + segment.GetType().ToString(CultureInfo.InvariantCulture) + ";start=" + SafeDescribePoint(startPoint) + ";end=" + SafeDescribePoint(endPoint);
+                return "segment=" + SafeDescribeObject(segment);
             }
             catch (Exception ex)
             {
-                return "type=" + segment.GetType().ToString(CultureInfo.InvariantCulture) + ";describeError=" + SafeText(ex.Message);
-            }
-        }
-
-        private static string SafeDescribePoint(object pointObject)
-        {
-            if (pointObject == null)
-            {
-                return "<null>";
-            }
-
-            try
-            {
-                SketchPoint point = pointObject as SketchPoint;
-                if (point == null)
-                {
-                    return SafeDescribeObject(pointObject);
-                }
-
-                return
-                    point.X.ToString("0.######", CultureInfo.InvariantCulture) + "," +
-                    point.Y.ToString("0.######", CultureInfo.InvariantCulture) + "," +
-                    point.Z.ToString("0.######", CultureInfo.InvariantCulture);
-            }
-            catch (Exception ex)
-            {
-                return "pointDescribeError=" + SafeText(ex.Message);
+                return "segmentDescribeError=" + SafeText(ex.Message);
             }
         }
 
@@ -424,11 +396,11 @@ namespace AxionFrame
                     object propertyValue = nameProperty.GetValue(value, null);
                     if (propertyValue != null)
                     {
-                    return "name=" + SafeText(propertyValue.ToString()) + ";type=" + valueType.ToString(CultureInfo.InvariantCulture);
+                        return "name=" + SafeText(propertyValue.ToString()) + ";type=" + valueType.FullName;
+                    }
                 }
-            }
 
-                return "value=" + SafeText(value.ToString()) + ";type=" + valueType.ToString(CultureInfo.InvariantCulture);
+                return "value=" + SafeText(value.ToString()) + ";type=" + valueType.FullName;
             }
             catch (Exception ex)
             {

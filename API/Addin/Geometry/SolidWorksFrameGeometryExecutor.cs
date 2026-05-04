@@ -12,6 +12,8 @@ namespace AxionFrame
     public sealed class SolidWorksFrameGeometryExecutor : IFrameGeometryExecutor
     {
         private const double MillimetersToMeters = 0.001d;
+        private const int ConnectedSegmentsSimpleCut = 1;
+        private const int ConnectedSegmentsCopedCut = 2;
 
         private readonly ISldWorks _swApp;
 
@@ -219,14 +221,12 @@ namespace AxionFrame
                 new DispatchWrapper(groupTwo)
             };
 
-            Feature structuralMemberFeature = featureManager.InsertStructuralWeldment4(
+            Feature structuralMemberFeature = TryInsertStructuralWeldmentWithFallback(
+                part,
+                featureManager,
                 profilePath,
-                1,
-                true,
-                groupedMembers);
-            traceEvents.Add("weldment.insert.called=true;trim=1;allowProtrusion=true;groupCount=2");
-            traceEvents.Add("weldment.feature.result.null=" + (structuralMemberFeature == null ? "true" : "false"));
-
+                groupedMembers,
+                traceEvents);
             if (structuralMemberFeature == null)
             {
                 throw new InvalidOperationException("Structural member creation failed for profile path: " + profilePath + ".");
@@ -261,7 +261,33 @@ namespace AxionFrame
                     continue;
                 }
 
-                bool selected = segments[i].Select4(true, null);
+                string selectionToken = TryGetSegmentSelectionToken(segments[i]);
+                bool selected = false;
+                if (!string.IsNullOrWhiteSpace(selectionToken))
+                {
+                    selected = part.Extension.SelectByID2(
+                        selectionToken,
+                        "EXTSKETCHSEGMENT",
+                        0.0d,
+                        0.0d,
+                        0.0d,
+                        selectedCount > 0,
+                        0,
+                        null,
+                        0);
+
+                    traceEvents.Add(
+                        groupKey + ".segment[" + i.ToString(CultureInfo.InvariantCulture) + "].selectById=" + (selected ? "true" : "false") +
+                        ";token=" + selectionToken);
+                }
+
+                if (!selected)
+                {
+                    selected = segments[i].Select4(selectedCount > 0, null);
+                    traceEvents.Add(
+                        groupKey + ".segment[" + i.ToString(CultureInfo.InvariantCulture) + "].select4Fallback=" + (selected ? "true" : "false"));
+                }
+
                 traceEvents.Add(
                     groupKey + ".segment[" + i.ToString(CultureInfo.InvariantCulture) + "].select=" + (selected ? "true" : "false") +
                     ";detail=" + DescribeSegment(segments[i]));
@@ -286,7 +312,7 @@ namespace AxionFrame
                 throw new InvalidOperationException("SolidWorks SelectionManager is not available.");
             }
 
-            object[] selectedSegments = new object[selectedCount];
+            SketchSegment[] selectedSegments = new SketchSegment[selectedCount];
             for (int selectionIndex = 0; selectionIndex < selectedCount; selectionIndex++)
             {
                 object selectedObject = selectionManager.GetSelectedObject6(selectionIndex + 1, 0);
@@ -295,7 +321,13 @@ namespace AxionFrame
                     throw new InvalidOperationException("Failed to retrieve selected sketch segment for structural member generation.");
                 }
 
-                selectedSegments[selectionIndex] = selectedObject;
+                SketchSegment selectedSegment = selectedObject as SketchSegment;
+                if (selectedSegment == null)
+                {
+                    throw new InvalidOperationException("Selected object is not a sketch segment.");
+                }
+
+                selectedSegments[selectionIndex] = selectedSegment;
                 traceEvents.Add(
                     groupKey + ".selection[" + selectionIndex.ToString(CultureInfo.InvariantCulture) + "]=" +
                     selectedObject.GetType().FullName +
@@ -317,6 +349,141 @@ namespace AxionFrame
             group.Angle = 0.0d;
             traceEvents.Add(groupKey + ".configured=true;cornerType=1;gapWithin=0;gapOther=0;angle=0");
             return group;
+        }
+
+        private static Feature TryInsertStructuralWeldmentWithFallback(
+            IModelDoc2 part,
+            IFeatureManager featureManager,
+            string profilePath,
+            DispatchWrapper[] groupedMembers,
+            List<string> traceEvents)
+        {
+            if (groupedMembers == null || groupedMembers.Length == 0)
+            {
+                return null;
+            }
+
+            Feature feature = TryInsertStructuralWeldment(
+                featureManager,
+                profilePath,
+                ConnectedSegmentsCopedCut,
+                true,
+                groupedMembers,
+                traceEvents,
+                "insert.bothGroups.coped.allow");
+            if (feature != null)
+            {
+                return feature;
+            }
+
+            if (groupedMembers.Length >= 2)
+            {
+                Feature firstGroupFeature = TryInsertStructuralWeldment(
+                    featureManager,
+                    profilePath,
+                    ConnectedSegmentsCopedCut,
+                    true,
+                    new DispatchWrapper[] { groupedMembers[0] },
+                    traceEvents,
+                    "insert.group1.coped.allow");
+                if (firstGroupFeature != null)
+                {
+                    Feature secondGroupFeature = TryInsertStructuralWeldment(
+                        featureManager,
+                        profilePath,
+                        ConnectedSegmentsCopedCut,
+                        true,
+                        new DispatchWrapper[] { groupedMembers[1] },
+                        traceEvents,
+                        "insert.group2.coped.allow");
+                    if (secondGroupFeature != null)
+                    {
+                        return secondGroupFeature;
+                    }
+                }
+            }
+
+            part.ClearSelection2(true);
+            return TryInsertStructuralWeldment(
+                featureManager,
+                profilePath,
+                ConnectedSegmentsSimpleCut,
+                false,
+                groupedMembers,
+                traceEvents,
+                "insert.bothGroups.simple.noProtrusion");
+        }
+
+        private static Feature TryInsertStructuralWeldment(
+            IFeatureManager featureManager,
+            string profilePath,
+            int connectedSegmentsOption,
+            bool allowProtrusion,
+            DispatchWrapper[] groups,
+            List<string> traceEvents,
+            string attemptLabel)
+        {
+            if (featureManager == null || groups == null || groups.Length == 0)
+            {
+                return null;
+            }
+
+            try
+            {
+                object featureObject = featureManager.GetType().InvokeMember(
+                    "InsertStructuralWeldment5",
+                    BindingFlags.InvokeMethod | BindingFlags.Public | BindingFlags.Instance,
+                    null,
+                    featureManager,
+                    new object[] { profilePath, connectedSegmentsOption, allowProtrusion, groups, string.Empty });
+
+                Feature insertedFeature = featureObject as Feature;
+                traceEvents.Add(
+                    attemptLabel + ".method=InsertStructuralWeldment5;connectedOption=" + connectedSegmentsOption.ToString(CultureInfo.InvariantCulture) +
+                    ";allowProtrusion=" + (allowProtrusion ? "true" : "false") +
+                    ";groupCount=" + groups.Length.ToString(CultureInfo.InvariantCulture) +
+                    ";resultNull=" + (insertedFeature == null ? "true" : "false"));
+
+                if (insertedFeature != null)
+                {
+                    return insertedFeature;
+                }
+            }
+            catch (MissingMethodException ex)
+            {
+                traceEvents.Add(attemptLabel + ".method=InsertStructuralWeldment5;missing=true;error=" + SafeText(ex.Message));
+            }
+            catch (TargetInvocationException ex)
+            {
+                Exception inner = ex.InnerException ?? ex;
+                traceEvents.Add(attemptLabel + ".method=InsertStructuralWeldment5;invokeError=" + SafeText(inner.Message));
+            }
+            catch (Exception ex)
+            {
+                traceEvents.Add(attemptLabel + ".method=InsertStructuralWeldment5;error=" + SafeText(ex.Message));
+            }
+
+            try
+            {
+                Feature insertedFeature = featureManager.InsertStructuralWeldment4(
+                    profilePath,
+                    connectedSegmentsOption,
+                    allowProtrusion,
+                    groups);
+
+                traceEvents.Add(
+                    attemptLabel + ".method=InsertStructuralWeldment4;connectedOption=" + connectedSegmentsOption.ToString(CultureInfo.InvariantCulture) +
+                    ";allowProtrusion=" + (allowProtrusion ? "true" : "false") +
+                    ";groupCount=" + groups.Length.ToString(CultureInfo.InvariantCulture) +
+                    ";resultNull=" + (insertedFeature == null ? "true" : "false"));
+
+                return insertedFeature;
+            }
+            catch (Exception ex)
+            {
+                traceEvents.Add(attemptLabel + ".method=InsertStructuralWeldment4;error=" + SafeText(ex.Message));
+                return null;
+            }
         }
 
         private static string BuildTrace(IList<string> traceEvents)
@@ -405,6 +572,105 @@ namespace AxionFrame
             catch (Exception ex)
             {
                 return "objectDescribeError=" + SafeText(ex.Message);
+            }
+        }
+
+        private static string TryGetSegmentSelectionToken(SketchSegment segment)
+        {
+            if (segment == null)
+            {
+                return string.Empty;
+            }
+
+            string segmentName = TryInvokeStringMethod(segment, "GetName");
+            if (string.IsNullOrWhiteSpace(segmentName))
+            {
+                return string.Empty;
+            }
+
+            object sketchObject = TryInvokeObjectMethod(segment, "GetSketch");
+            string sketchName = TryInvokeStringMethod(sketchObject, "GetName");
+            if (string.IsNullOrWhiteSpace(sketchName))
+            {
+                sketchName = TryReadStringProperty(sketchObject, "Name");
+            }
+
+            if (string.IsNullOrWhiteSpace(sketchName))
+            {
+                return string.Empty;
+            }
+
+            return segmentName + "@" + sketchName;
+        }
+
+        private static string TryInvokeStringMethod(object target, string methodName)
+        {
+            if (target == null || string.IsNullOrWhiteSpace(methodName))
+            {
+                return string.Empty;
+            }
+
+            try
+            {
+                MethodInfo methodInfo = target.GetType().GetMethod(methodName, BindingFlags.Public | BindingFlags.Instance);
+                if (methodInfo == null)
+                {
+                    return string.Empty;
+                }
+
+                object value = methodInfo.Invoke(target, null);
+                return value == null ? string.Empty : value.ToString();
+            }
+            catch
+            {
+                return string.Empty;
+            }
+        }
+
+        private static object TryInvokeObjectMethod(object target, string methodName)
+        {
+            if (target == null || string.IsNullOrWhiteSpace(methodName))
+            {
+                return null;
+            }
+
+            try
+            {
+                MethodInfo methodInfo = target.GetType().GetMethod(methodName, BindingFlags.Public | BindingFlags.Instance);
+                if (methodInfo == null)
+                {
+                    return null;
+                }
+
+                return methodInfo.Invoke(target, null);
+            }
+            catch
+            {
+                return null;
+            }
+        }
+
+        private static string TryReadStringProperty(object target, string propertyName)
+        {
+            if (target == null || string.IsNullOrWhiteSpace(propertyName))
+            {
+                return string.Empty;
+            }
+
+            try
+            {
+                PropertyInfo propertyInfo = target.GetType().GetProperty(propertyName, BindingFlags.Public | BindingFlags.Instance);
+                if (propertyInfo == null || !propertyInfo.CanRead)
+                {
+                    return string.Empty;
+                }
+
+                object value = propertyInfo.GetValue(target, null);
+                return value == null ? string.Empty : value.ToString();
+            }
+            catch
+            {
+                return string.Empty;
             }
         }
 

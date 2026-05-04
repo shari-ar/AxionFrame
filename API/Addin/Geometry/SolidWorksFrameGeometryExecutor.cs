@@ -1,9 +1,7 @@
 using SolidWorks.Interop.sldworks;
-using SolidWorks.Interop.swconst;
 using System.IO;
 using System.Runtime.InteropServices;
 using System;
-using System.Reflection;
 
 namespace AxionFrame
 {
@@ -151,38 +149,41 @@ namespace AxionFrame
 
             featureManager.InsertWeldmentFeature();
 
-            // Match the proven manual workflow: create the structural member in two steps/groups.
-            Feature firstFeature = InsertStructuralMemberGroup(
+            StructuralMemberGroup groupOne = CreateStructuralMemberGroup(
                 part,
                 featureManager,
-                profilePath,
-                "Group1",
                 topSegment,
                 diagonalSegment,
                 bottomSegment);
-            if (firstFeature == null)
-            {
-                throw new InvalidOperationException("Structural member creation failed for Group1.");
-            }
-
-            Feature secondFeature = InsertStructuralMemberGroup(
+            StructuralMemberGroup groupTwo = CreateStructuralMemberGroup(
                 part,
                 featureManager,
-                profilePath,
-                "Group2",
                 braceTop,
                 braceBottom);
-            if (secondFeature == null)
+
+            DispatchWrapper[] groupedMembers = new DispatchWrapper[]
             {
-                throw new InvalidOperationException("Structural member creation failed for Group2.");
+                new DispatchWrapper(groupOne),
+                new DispatchWrapper(groupTwo)
+            };
+
+            Feature structuralMemberFeature = featureManager.InsertStructuralWeldment4(
+                profilePath,
+                1,
+                true,
+                groupedMembers);
+
+            if (structuralMemberFeature == null)
+            {
+                throw new InvalidOperationException("Structural member creation failed for profile path: " + profilePath + ".");
             }
+
+            part.ClearSelection2(true);
         }
 
-        private static Feature InsertStructuralMemberGroup(
+        private static StructuralMemberGroup CreateStructuralMemberGroup(
             IModelDoc2 part,
             IFeatureManager featureManager,
-            string profilePath,
-            string groupName,
             params SketchSegment[] segments)
         {
             if (segments == null || segments.Length == 0)
@@ -213,72 +214,37 @@ namespace AxionFrame
                 throw new InvalidOperationException("No valid sketch segments were selected for structural member generation.");
             }
 
+            ISelectionMgr selectionManager = part.SelectionManager as ISelectionMgr;
+            if (selectionManager == null)
+            {
+                throw new InvalidOperationException("SolidWorks SelectionManager is not available.");
+            }
+
+            object[] selectedSegments = new object[selectedCount];
+            for (int selectionIndex = 0; selectionIndex < selectedCount; selectionIndex++)
+            {
+                object selectedObject = selectionManager.GetSelectedObject6(selectionIndex + 1, 0);
+                if (selectedObject == null)
+                {
+                    throw new InvalidOperationException("Failed to retrieve selected sketch segment for structural member generation.");
+                }
+
+                selectedSegments[selectionIndex] = selectedObject;
+            }
+
             StructuralMemberGroup group = featureManager.CreateStructuralMemberGroup();
             if (group == null)
             {
                 throw new InvalidOperationException("Failed to create structural member group.");
             }
 
-            object[] selectedSegments = new object[selectedCount];
-            int segmentIndex = 0;
-            for (int i = 0; i < segments.Length; i++)
-            {
-                if (segments[i] != null)
-                {
-                    selectedSegments[segmentIndex++] = segments[i];
-                }
-            }
-
             group.Segments = selectedSegments;
             group.ApplyCornerTreatment = true;
-            // Requested behavior: coped cut, protrusion allowed, profile angle 0 deg.
-            group.CornerTreatmentType = 0;
-            TrySetGroupProperty(group, "AllowProtrusion", true);
-            TrySetGroupProperty(group, "Angle", 0.0d);
-            TrySetGroupProperty(group, "GroupName", groupName);
-
-            object[] groups = new object[] { new DispatchWrapper(group) };
-            return featureManager.InsertStructuralWeldment4(
-                profilePath,
-                0,
-                false,
-                groups);
-        }
-
-        private static void TrySetGroupProperty(StructuralMemberGroup group, string propertyName, object value)
-        {
-            if (group == null || string.IsNullOrWhiteSpace(propertyName))
-            {
-                return;
-            }
-
-            PropertyInfo propertyInfo = group.GetType().GetProperty(propertyName, BindingFlags.Public | BindingFlags.Instance);
-            if (propertyInfo == null || !propertyInfo.CanWrite)
-            {
-                return;
-            }
-
-            try
-            {
-                object convertedValue = value;
-                if (value != null)
-                {
-                    Type targetType = propertyInfo.PropertyType;
-                    if (targetType.IsEnum)
-                    {
-                        convertedValue = Enum.ToObject(targetType, value);
-                    }
-                    else if (targetType != value.GetType())
-                    {
-                        convertedValue = Convert.ChangeType(value, targetType);
-                    }
-                }
-
-                propertyInfo.SetValue(group, convertedValue, null);
-            }
-            catch
-            {
-            }
+            group.CornerTreatmentType = 1;
+            group.GapWithinGroup = 0.0d;
+            group.GapForOtherGroups = 0.0d;
+            group.Angle = 0.0d;
+            return group;
         }
     }
 }

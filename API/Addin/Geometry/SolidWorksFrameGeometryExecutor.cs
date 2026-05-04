@@ -49,7 +49,7 @@ namespace AxionFrame
                 }
 
                 traceEvents.Add("doc.active=" + part.GetTitle());
-                traceEvents.Add("doc.type=" + part.GetType().FullName);
+                traceEvents.Add("doc.type=" + part.GetType().ToString(CultureInfo.InvariantCulture));
                 if (!SelectRightPlane(part))
                 {
                     throw new InvalidOperationException("Right Plane could not be selected.");
@@ -372,13 +372,13 @@ namespace AxionFrame
 
             try
             {
-                object startPoint = segment.GetStartPoint2();
-                object endPoint = segment.GetEndPoint2();
-                return "type=" + segment.GetType().FullName + ";start=" + SafeDescribePoint(startPoint) + ";end=" + SafeDescribePoint(endPoint);
+                object startPoint = segment.GetStartPoint();
+                object endPoint = segment.GetEndPoint();
+                return "type=" + segment.GetType().ToString(CultureInfo.InvariantCulture) + ";start=" + SafeDescribePoint(startPoint) + ";end=" + SafeDescribePoint(endPoint);
             }
             catch (Exception ex)
             {
-                return "type=" + segment.GetType().FullName + ";describeError=" + SafeText(ex.Message);
+                return "type=" + segment.GetType().ToString(CultureInfo.InvariantCulture) + ";describeError=" + SafeText(ex.Message);
             }
         }
 
@@ -391,7 +391,7 @@ namespace AxionFrame
 
             try
             {
-                ISketchPoint point = pointObject as ISketchPoint;
+                SketchPoint point = pointObject as SketchPoint;
                 if (point == null)
                 {
                     return SafeDescribeObject(pointObject);
@@ -424,11 +424,11 @@ namespace AxionFrame
                     object propertyValue = nameProperty.GetValue(value, null);
                     if (propertyValue != null)
                     {
-                        return "name=" + SafeText(propertyValue.ToString()) + ";type=" + valueType.FullName;
-                    }
+                    return "name=" + SafeText(propertyValue.ToString()) + ";type=" + valueType.ToString(CultureInfo.InvariantCulture);
                 }
+            }
 
-                return "value=" + SafeText(value.ToString()) + ";type=" + valueType.FullName;
+                return "value=" + SafeText(value.ToString()) + ";type=" + valueType.ToString(CultureInfo.InvariantCulture);
             }
             catch (Exception ex)
             {

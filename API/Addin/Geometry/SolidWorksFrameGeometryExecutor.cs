@@ -82,10 +82,9 @@ namespace AxionFrame
                 throw new InvalidOperationException("Failed to create brace segments to split the Z center line.");
             }
 
-            ApplyStructuralMemberProfile(part, request, new[] { topSegment, diagonalSegment, bottomSegment, braceTop, braceBottom });
-
             part.ClearSelection2(true);
             part.SketchManager.InsertSketch(true);
+            ApplyStructuralMemberProfile(part, request, new[] { topSegment, diagonalSegment, bottomSegment, braceTop, braceBottom });
             part.ForceRebuild3(false);
 
             string note =

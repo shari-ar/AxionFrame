@@ -181,7 +181,7 @@ namespace AxionFrame
             group.CornerTreatmentType = 0;
 
             object[] groups = new object[] { new DispatchWrapper(group) };
-            Feature feature = featureManager.InsertStructuralWeldment5(
+            Feature feature = featureManager.InsertStructuralWeldment4(
                 profilePath,
                 0,
                 false,

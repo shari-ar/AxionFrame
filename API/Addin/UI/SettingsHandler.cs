@@ -25,6 +25,7 @@ namespace AxionFrame
 
         public void AfterClose()
         {
+            _page.OnPageClosing();
             int indentSize = System.Diagnostics.Debug.IndentSize;
             System.Diagnostics.Debug.WriteLine(indentSize);
         }
@@ -35,6 +36,7 @@ namespace AxionFrame
 
         public void OnClose(int reason)
         {
+            _page.OnPageClosing();
             int indentSize = System.Diagnostics.Debug.IndentSize;
             System.Diagnostics.Debug.WriteLine(indentSize);
         }

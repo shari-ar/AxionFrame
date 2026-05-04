@@ -46,6 +46,7 @@ namespace AxionFrame
         private readonly IDictionary<string, object> _initialSettings;
         private readonly Dictionary<string, string> _runtimeSettingsText = new Dictionary<string, string>(StringComparer.Ordinal);
         private bool _isInternalValueUpdate;
+        private bool _isPageVisible;
 
         public SettingsPage(SwAddin addin)
         {
@@ -269,6 +270,7 @@ namespace AxionFrame
         {
             ApplyRuntimeStateToControls();
             RefreshProfileSelectionFromLibrary(true);
+            _isPageVisible = true;
             if (swPropertyPage != null)
             {
                 swPropertyPage.Show();
@@ -277,7 +279,11 @@ namespace AxionFrame
 
         public IDictionary<string, string> CaptureRuntimeOverrides()
         {
-            RefreshRuntimeStateFromControls();
+            if (_isPageVisible)
+            {
+                RefreshRuntimeStateFromControls();
+            }
+
             Dictionary<string, string> overrides = new Dictionary<string, string>(StringComparer.Ordinal);
             foreach (KeyValuePair<string, string> entry in _runtimeSettingsText)
             {
@@ -285,6 +291,16 @@ namespace AxionFrame
             }
 
             return overrides;
+        }
+
+        public void OnPageClosing()
+        {
+            if (_isPageVisible)
+            {
+                RefreshRuntimeStateFromControls();
+            }
+
+            _isPageVisible = false;
         }
 
         public bool TryResolveSettingsKey(int controlId, out string key)

@@ -2,6 +2,9 @@ using SolidWorks.Interop.sldworks;
 using System.IO;
 using System.Runtime.InteropServices;
 using System;
+using System.Collections.Generic;
+using System.Globalization;
+using System.Text;
 
 namespace AxionFrame
 {
@@ -23,27 +26,35 @@ namespace AxionFrame
 
         public FrameGeometryResult Generate(FrameGeometryRequest request)
         {
+            List<string> traceEvents = new List<string>();
             if (request == null)
             {
                 throw new ArgumentNullException(nameof(request));
             }
 
+            traceEvents.Add("generate.start");
             IModelDoc2 part = _swApp.ActiveDoc as IModelDoc2;
             if (part == null)
             {
                 throw new InvalidOperationException("No active SolidWorks document is available.");
             }
 
+            traceEvents.Add("doc.active=" + part.GetTitle());
             if (!SelectRightPlane(part))
             {
                 throw new InvalidOperationException("Right Plane could not be selected.");
             }
 
+            traceEvents.Add("plane.selected=Right Plane");
             part.SketchManager.InsertSketch(true);
             part.ClearSelection2(true);
+            traceEvents.Add("sketch.opened=true");
 
             double tableWidthMillimeters = (double)request.TableWidth;
             double tableHeightMillimeters = (double)request.TableHeight;
+            traceEvents.Add(
+                "request.dimensions.widthMm=" + tableWidthMillimeters.ToString("0.###", CultureInfo.InvariantCulture) +
+                ";heightMm=" + tableHeightMillimeters.ToString("0.###", CultureInfo.InvariantCulture));
             if (tableWidthMillimeters <= 0.0d || tableHeightMillimeters <= 0.0d)
             {
                 throw new InvalidOperationException("Table width and height must be greater than zero.");
@@ -64,6 +75,7 @@ namespace AxionFrame
             {
                 throw new InvalidOperationException("Failed to create primary Z-frame sketch segments.");
             }
+            traceEvents.Add("segments.primary.created=true");
 
             double yAtOneThird = topY + (bottomY - topY) / 3.0d;
             double yAtTwoThird = topY + 2.0d * (bottomY - topY) / 3.0d;
@@ -80,15 +92,19 @@ namespace AxionFrame
             {
                 throw new InvalidOperationException("Failed to create brace segments to split the Z center line.");
             }
+            traceEvents.Add("segments.brace.created=true");
 
             part.ClearSelection2(true);
             part.SketchManager.InsertSketch(true);
-            ApplyStructuralMemberProfile(part, request, topSegment, diagonalSegment, bottomSegment, braceTop, braceBottom);
+            traceEvents.Add("sketch.closed=true");
+
+            ApplyStructuralMemberProfile(part, request, topSegment, diagonalSegment, bottomSegment, braceTop, braceBottom, traceEvents);
             part.ForceRebuild3(false);
+            traceEvents.Add("rebuild.completed=true");
 
             string note =
                 "Z-frame sketch generated on Right Plane: width=" + tableWidthMillimeters.ToString("0.###") + "mm, height=" + tableHeightMillimeters.ToString("0.###") + "mm, centered at origin; " +
-                "braces connect end points to diagonal one-third split points; profile context=" + request.SelectedProfileCode + ".";
+                "braces connect end points to diagonal one-third split points; profile context=" + request.SelectedProfileCode + "; trace=" + BuildTrace(traceEvents) + ".";
             return new FrameGeometryResult(true, part.GetTitle(), note);
         }
 
@@ -110,7 +126,8 @@ namespace AxionFrame
             SketchSegment diagonalSegment,
             SketchSegment bottomSegment,
             SketchSegment braceTop,
-            SketchSegment braceBottom)
+            SketchSegment braceBottom,
+            List<string> traceEvents)
         {
             if (part == null)
             {
@@ -135,11 +152,13 @@ namespace AxionFrame
                 request.SelectedProfileStandard,
                 request.SelectedProfileType,
                 request.SelectedProfileSize + ".sldlfp");
+            traceEvents.Add("profile.path=" + profilePath);
 
             if (!File.Exists(profilePath))
             {
                 throw new InvalidOperationException("Selected weldment profile file was not found: " + profilePath + ".");
             }
+            traceEvents.Add("profile.exists=true");
 
             IFeatureManager featureManager = part.FeatureManager;
             if (featureManager == null)
@@ -148,16 +167,21 @@ namespace AxionFrame
             }
 
             featureManager.InsertWeldmentFeature();
+            traceEvents.Add("weldment.feature.inserted=true");
 
             StructuralMemberGroup groupOne = CreateStructuralMemberGroup(
                 part,
                 featureManager,
+                "group1",
+                traceEvents,
                 topSegment,
                 diagonalSegment,
                 bottomSegment);
             StructuralMemberGroup groupTwo = CreateStructuralMemberGroup(
                 part,
                 featureManager,
+                "group2",
+                traceEvents,
                 braceTop,
                 braceBottom);
 
@@ -172,18 +196,23 @@ namespace AxionFrame
                 1,
                 true,
                 groupedMembers);
+            traceEvents.Add("weldment.insert.called=true;trim=1;allowProtrusion=true;groupCount=2");
 
             if (structuralMemberFeature == null)
             {
                 throw new InvalidOperationException("Structural member creation failed for profile path: " + profilePath + ".");
             }
+            traceEvents.Add("weldment.feature.created=true");
 
             part.ClearSelection2(true);
+            traceEvents.Add("selection.cleared.afterWeldment=true");
         }
 
         private static StructuralMemberGroup CreateStructuralMemberGroup(
             IModelDoc2 part,
             IFeatureManager featureManager,
+            string groupKey,
+            List<string> traceEvents,
             params SketchSegment[] segments)
         {
             if (segments == null || segments.Length == 0)
@@ -208,6 +237,7 @@ namespace AxionFrame
 
                 selectedCount++;
             }
+            traceEvents.Add(groupKey + ".selected.segmentCount=" + selectedCount.ToString(CultureInfo.InvariantCulture));
 
             if (selectedCount == 0)
             {
@@ -230,6 +260,9 @@ namespace AxionFrame
                 }
 
                 selectedSegments[selectionIndex] = selectedObject;
+                traceEvents.Add(
+                    groupKey + ".selection[" + selectionIndex.ToString(CultureInfo.InvariantCulture) + "]=" +
+                    selectedObject.GetType().FullName);
             }
 
             StructuralMemberGroup group = featureManager.CreateStructuralMemberGroup();
@@ -244,7 +277,29 @@ namespace AxionFrame
             group.GapWithinGroup = 0.0d;
             group.GapForOtherGroups = 0.0d;
             group.Angle = 0.0d;
+            traceEvents.Add(groupKey + ".configured=true;cornerType=1;gapWithin=0;gapOther=0;angle=0");
             return group;
+        }
+
+        private static string BuildTrace(IList<string> traceEvents)
+        {
+            if (traceEvents == null || traceEvents.Count == 0)
+            {
+                return "none";
+            }
+
+            StringBuilder builder = new StringBuilder();
+            for (int index = 0; index < traceEvents.Count; index++)
+            {
+                if (index > 0)
+                {
+                    builder.Append(" > ");
+                }
+
+                builder.Append(traceEvents[index]);
+            }
+
+            return builder.ToString();
         }
     }
 }

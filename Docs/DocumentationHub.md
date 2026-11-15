@@ -1,33 +1,54 @@
 # AxionFrame Documentation Hub
 
 - **Title:** AxionFrame Documentation Hub
-- **Scope:** This document defines the documentation structure, reading sequence, and product outcome alignment for AxionFrame.
+- **Status:** Active
+- **Owner:** Joint Software and Mechanical Engineering
+- **Scope:** Active documentation structure, reading order, authority, and lifecycle classification.
 
 ## Product Outcome
 
-AxionFrame delivers a SolidWorks Add-in experience. Users adjust default settings, select **Build**, and generate CAD files. Users then select **Final Output** and generate STEP, DXF, BOM, and related deliverables in the `Output/` folder.
+AxionFrame generates a parametric, fixed-height, fully demountable X-frame workbench through a SolidWorks 2026 add-in. Build creates CAD parts and assemblies. Build Verification confirms the generated result. Final Output creates STEP, DXF, BOM, validation reports, manifests, and checksums.
 
-## Structure
+## Documentation Authority
 
-- **Software/**: Add-in architecture, implementation contracts, and development guidance.
-- **Mechanical/**: Mechanical design intent and manufacturing-focused engineering guidance.
-- **Workflow/**: Runtime and release workflow for Build and Final Output operations.
-- **Governance/**: Documentation standards, naming, versioning, and ownership.
+| Priority | Document | Authority |
+|---:|---|---|
+| 1 | `Governance/DecisionRegister.md` | Approved decision index |
+| 2 | `Workflow/CR-001-MechanicalRebaselineDecision.md` | Active product transition decision |
+| 3 | `Mechanical/DesignAndManufacturing.md` | Active mechanical design intent |
+| 4 | `../roadmap.md` | Active delivery sequence and gates |
+| 5 | `Workflow/ProjectLifecycle.md` | Runtime and release lifecycle |
+| 6 | `Software/Architecture.md` | Software architecture baseline |
+| 7 | `Software/DevelopmentGuide.md` | Implementation and verification rules |
+| 8 | `Governance/DevOpsPolicy.md` | GitHub, CI, Pages, artifact, and release policy |
+| 9 | `Verification/SolidWorksVerificationPolicy.md` | SolidWorks verification package and evidence policy |
+| 10 | `Governance/DocumentationStandards.md` | Documentation language and quality rules |
+
+## Directory Structure
+
+- **Governance/** contains decisions, documentation standards, ownership rules, and DevOps policy.
+- **Mechanical/** contains product intent, engineering requirements, manufacturing rules, and mechanical verification records.
+- **Software/** contains architecture, contracts, naming, validation, and development guidance.
+- **Workflow/** contains lifecycle definitions, change records, feature tickets, and stage evidence.
+- **Verification/** contains formal verification policies, plans, packages, and reports.
 
 ## Recommended Reading Order
 
-1. `Workflow/ProjectLifecycle.md`
-2. `Software/Architecture.md`
-3. `Software/DevelopmentGuide.md`
-4. `Mechanical/DesignAndManufacturing.md`
-5. `Governance/DocumentationStandards.md`
-6. `Workflow/S0.1-BaselineScopeDecision.md`
-7. `Workflow/S0.2-RoadmapTrackingBoard.md`
-8. `Mechanical/S1.1-RequirementTraceMatrix.md`
-9. `Workflow/S1.2-FeatureDoRTemplate.md`
-10. `Mechanical/S1.3-CriticalRuleIndex.md`
-11. `Software/S2.1-ArchitectureOwnershipMap.md`
-12. `Workflow/S2.2-ConfigurationSchemaAndValidatorsFeatureTicket.md`
-13. `Workflow/S2.3-DeterministicNamingRulesFeatureTicket.md`
-14. `Workflow/S3.1-BuildCommandLifecycleAndInstrumentationFeatureTicket.md`
-15. `Workflow/S3.2-FrameModuleBehaviorFeatureTicket.md`
+1. `Governance/DecisionRegister.md`
+2. `Workflow/CR-001-MechanicalRebaselineDecision.md`
+3. `Mechanical/DesignAndManufacturing.md`
+4. `../roadmap.md`
+5. `Workflow/ProjectLifecycle.md`
+6. `Software/Architecture.md`
+7. `Software/DevelopmentGuide.md`
+8. `Governance/DevOpsPolicy.md`
+9. `Verification/SolidWorksVerificationPolicy.md`
+10. `Governance/DocumentationStandards.md`
+
+## Historical Delivery Evidence
+
+The numbered `S0.x` through `S3.x` documents preserve the execution evidence associated with the former mechanical baseline. `CR-001` provides the active transition authority. Each future revalidated artifact receives an active status and a direct link from this hub.
+
+## Publishing
+
+GitHub Pages publishes the complete `Docs/` tree through a custom GitHub Actions workflow. The published navigation follows this hub and presents active documents before historical evidence.

@@ -19,7 +19,7 @@ AxionFrame generates a parametric, fixed-height, fully demountable X-frame workb
 | 4 | `Mechanical/ProductRequirementsSpecification.md` | Measurable R1 product requirements |
 | 5 | `Mechanical/RequirementsTraceabilityMatrix.md` | Decision-to-evidence traceability |
 | 6 | `Mechanical/CriticalEngineeringRules.md` | Mandatory engineering-rule index |
-| 7 | `../roadmap.md` | Active delivery sequence and gates |
+| 7 | `Roadmap.md` | Active delivery sequence and gates |
 | 8 | `Workflow/ProjectLifecycle.md` | Runtime and release lifecycle |
 | 9 | `Software/Architecture.md` | Software architecture baseline |
 | 10 | `Software/DevelopmentGuide.md` | Implementation and verification rules |
@@ -43,7 +43,7 @@ AxionFrame generates a parametric, fixed-height, fully demountable X-frame workb
 4. `Mechanical/ProductRequirementsSpecification.md`
 5. `Mechanical/RequirementsTraceabilityMatrix.md`
 6. `Mechanical/CriticalEngineeringRules.md`
-7. `../roadmap.md`
+7. `Roadmap.md`
 8. `Workflow/ProjectLifecycle.md`
 9. `Software/Architecture.md`
 10. `Software/DevelopmentGuide.md`

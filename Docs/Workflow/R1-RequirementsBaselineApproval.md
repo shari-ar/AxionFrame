@@ -18,7 +18,7 @@ R1 uses the single approved fixed-height parametric X-frame concept defined by `
 | Requirements Traceability Matrix | `Docs/Mechanical/RequirementsTraceabilityMatrix.md` | Complete |
 | Critical Engineering Rules | `Docs/Mechanical/CriticalEngineeringRules.md` | Complete |
 | Decision Register update | `Docs/Governance/DecisionRegister.md` | Complete |
-| Roadmap update | `roadmap.md` | Complete |
+| Roadmap update | `../Roadmap.md` | Complete |
 
 ## Gate Evidence
 
@@ -49,4 +49,4 @@ R2 begins after formal approval of this gate. R2 produces load cases, calculatio
 - `../Mechanical/ProductRequirementsSpecification.md`
 - `../Mechanical/RequirementsTraceabilityMatrix.md`
 - `../Mechanical/CriticalEngineeringRules.md`
-- `../../roadmap.md`
+- `../Roadmap.md`

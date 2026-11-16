@@ -16,13 +16,16 @@ AxionFrame generates a parametric, fixed-height, fully demountable X-frame workb
 | 1 | `Governance/DecisionRegister.md` | Approved decision index |
 | 2 | `Workflow/CR-001-MechanicalRebaselineDecision.md` | Active product transition decision |
 | 3 | `Mechanical/DesignAndManufacturing.md` | Active mechanical design intent |
-| 4 | `../roadmap.md` | Active delivery sequence and gates |
-| 5 | `Workflow/ProjectLifecycle.md` | Runtime and release lifecycle |
-| 6 | `Software/Architecture.md` | Software architecture baseline |
-| 7 | `Software/DevelopmentGuide.md` | Implementation and verification rules |
-| 8 | `Governance/DevOpsPolicy.md` | GitHub, CI, Pages, artifact, and release policy |
-| 9 | `Verification/SolidWorksVerificationPolicy.md` | SolidWorks verification package and evidence policy |
-| 10 | `Governance/DocumentationStandards.md` | Documentation language and quality rules |
+| 4 | `Mechanical/ProductRequirementsSpecification.md` | Measurable R1 product requirements |
+| 5 | `Mechanical/RequirementsTraceabilityMatrix.md` | Decision-to-evidence traceability |
+| 6 | `Mechanical/CriticalEngineeringRules.md` | Mandatory engineering-rule index |
+| 7 | `Roadmap.md` | Active delivery sequence and gates |
+| 8 | `Workflow/ProjectLifecycle.md` | Runtime and release lifecycle |
+| 9 | `Software/Architecture.md` | Software architecture baseline |
+| 10 | `Software/DevelopmentGuide.md` | Implementation and verification rules |
+| 11 | `Governance/DevOpsPolicy.md` | GitHub, CI, Pages, artifact, and release policy |
+| 12 | `Verification/SolidWorksVerificationPolicy.md` | SolidWorks verification package and evidence policy |
+| 13 | `Governance/DocumentationStandards.md` | Documentation language and quality rules |
 
 ## Directory Structure
 
@@ -37,17 +40,20 @@ AxionFrame generates a parametric, fixed-height, fully demountable X-frame workb
 1. `Governance/DecisionRegister.md`
 2. `Workflow/CR-001-MechanicalRebaselineDecision.md`
 3. `Mechanical/DesignAndManufacturing.md`
-4. `../roadmap.md`
-5. `Workflow/ProjectLifecycle.md`
-6. `Software/Architecture.md`
-7. `Software/DevelopmentGuide.md`
-8. `Governance/DevOpsPolicy.md`
-9. `Verification/SolidWorksVerificationPolicy.md`
-10. `Governance/DocumentationStandards.md`
+4. `Mechanical/ProductRequirementsSpecification.md`
+5. `Mechanical/RequirementsTraceabilityMatrix.md`
+6. `Mechanical/CriticalEngineeringRules.md`
+7. `Roadmap.md`
+8. `Workflow/ProjectLifecycle.md`
+9. `Software/Architecture.md`
+10. `Software/DevelopmentGuide.md`
+11. `Governance/DevOpsPolicy.md`
+12. `Verification/SolidWorksVerificationPolicy.md`
+13. `Governance/DocumentationStandards.md`
 
 ## Historical Delivery Evidence
 
-The numbered `S0.x` through `S3.x` documents preserve the execution evidence associated with the former mechanical baseline. `CR-001` provides the active transition authority. Each future revalidated artifact receives an active status and a direct link from this hub.
+The numbered `S0.x` through `S3.x` documents preserve the execution evidence associated with the former mechanical baseline. `CR-001` provides the active transition authority. The R1 requirements, traceability matrix, and critical rules provide the active successors for former Stage 1 mechanical artifacts.
 
 ## Publishing
 

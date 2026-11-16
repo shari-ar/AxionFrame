@@ -38,7 +38,10 @@ The complete mechanical intent appears in `Docs/Mechanical/DesignAndManufacturin
 - `Docs/DocumentationHub.md` provides the active documentation index.
 - `Docs/Governance/DecisionRegister.md` records approved project decisions.
 - `Docs/Workflow/CR-001-MechanicalRebaselineDecision.md` records the controlled mechanical rebaseline.
-- `roadmap.md` defines the active stage-gate delivery plan.
+- `Docs/Mechanical/ProductRequirementsSpecification.md` defines the measurable product baseline.
+- `Docs/Mechanical/RequirementsTraceabilityMatrix.md` maps decisions and requirements to verification evidence.
+- `Docs/Mechanical/CriticalEngineeringRules.md` defines mandatory engineering-rule enforcement.
+- `Docs/Roadmap.md` defines the active stage-gate delivery plan.
 - `Docs/Governance/DevOpsPolicy.md` defines GitHub and delivery policy.
 - `Docs/Verification/SolidWorksVerificationPolicy.md` defines formal CAD verification.
 

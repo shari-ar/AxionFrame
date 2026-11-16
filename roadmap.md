@@ -38,12 +38,14 @@ R0 Governance and Rebaseline
 
 **Outcome:** The repository carries one authoritative product direction and one delivery system.
 
+**Status:** Complete through merged pull request `#6`.
+
 | Deliverable | Verification | Acceptance |
 |---|---|---|
-| `CR-001-MechanicalRebaselineDecision.md` | Decision review | Approved scope and impact set |
-| `DecisionRegister.md` | Decision trace review | Every current decision has one identifier |
-| `DocumentationStandards.md` | Language and structure review | Active documents follow the project standard |
-| `DevOpsPolicy.md` | Platform policy review | GitHub workflow, Pages, security, artifact, and release rules are explicit |
+| `Docs/Workflow/CR-001-MechanicalRebaselineDecision.md` | Decision review | Approved scope and impact set |
+| `Docs/Governance/DecisionRegister.md` | Decision trace review | Every current decision has one identifier |
+| `Docs/Governance/DocumentationStandards.md` | Language and structure review | Active documents follow the project standard |
+| `Docs/Governance/DevOpsPolicy.md` | Platform policy review | GitHub workflow, Pages, security, artifact, and release rules are explicit |
 | Version 4 roadmap | Stage-gate review | Every delivery stage has an outcome and gate |
 
 **Gate R0:** Governance Baseline Approval.
@@ -52,12 +54,15 @@ R0 Governance and Rebaseline
 
 **Outcome:** The selected X-frame concept carries measurable engineering requirements.
 
+**Status:** Complete through formal approval of the R1 baseline.
+
 | Deliverable | Verification | Acceptance |
 |---|---|---|
-| Design Intent baseline | Topology review | A, B, C, D, N1, and N2 define each end frame |
-| Product Requirements Specification | Requirement quality review | Load, stiffness, stability, portability, clamping, manufacturability, safety, and appearance requirements use measurable values |
-| Requirements Traceability Matrix | Coverage review | Every product requirement maps to verification evidence |
-| Critical Engineering Rules | Rule review | Geometry, joint, material, fastener, and output rules have identifiers |
+| `Docs/Mechanical/DesignAndManufacturing.md` | Topology review | A, B, C, D, N1, and N2 define each end frame |
+| `Docs/Mechanical/ProductRequirementsSpecification.md` | Requirement quality review | Load, stiffness, stability, portability, clamping, manufacturability, safety, appearance, CAD, and delivery requirements use measurable values |
+| `Docs/Mechanical/RequirementsTraceabilityMatrix.md` | Coverage review | Every product requirement maps to a decision, verification method, evidence record, and delivery stage |
+| `Docs/Mechanical/CriticalEngineeringRules.md` | Rule review | Critical rules carry stable IDs, enforcement levels, and deterministic pass conditions |
+| `Docs/Workflow/R1-RequirementsBaselineApproval.md` | Gate review | Gate evidence reaches every required result |
 
 **Gate R1:** Requirements Baseline Approval.
 
@@ -161,4 +166,4 @@ R0 Governance and Rebaseline
 
 ## Active Execution Point
 
-The program executes R0 first. R1 begins after Governance Baseline Approval. Each later stage begins after approval of its preceding gate.
+R2 is the active execution stage from the merged R1 baseline.

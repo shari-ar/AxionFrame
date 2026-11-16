@@ -2,7 +2,7 @@
 
 - **Title:** Project Decision Register
 - **Status:** Active
-- **Owner:** Product Owner
+- **Owner:** Engineering Governance
 - **Scope:** Approved product, engineering, workflow, documentation, and DevOps decisions for AxionFrame.
 
 ## Decision Authority
@@ -31,6 +31,8 @@ This register provides the current decision index. Each referenced document prov
 | DR-018 | Documentation delivery | GitHub Pages publishes the complete `Docs/` set through a custom GitHub Actions workflow. | `Docs/Governance/DevOpsPolicy.md` |
 | DR-019 | Distribution | GitHub Releases distributes versioned desktop assets, manifests, checksums, and release notes. | `Docs/Governance/DevOpsPolicy.md` |
 | DR-020 | Documentation language | Active documentation uses precise, affirmative US English for a technical audience. | `Docs/Governance/DocumentationStandards.md` |
+| DR-021 | R1 performance baseline | The rated workbench uses the measurable product, structural, joint, work-surface, portability, manufacturing, CAD, and delivery requirements in the R1 baseline. | `Docs/Mechanical/ProductRequirementsSpecification.md` |
+| DR-022 | Engineering implementation | SolidWorks 2026 documentation provides the sole software authority, every code directory carries a local README, and each automated operation preserves fully defined mechanical and manufacturing intent. | `AGENTS.md` and `Docs/Software/DevelopmentGuide.md` |
 
 ## Change Control
 

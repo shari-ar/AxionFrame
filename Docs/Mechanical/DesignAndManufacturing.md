@@ -134,6 +134,9 @@ Every mechanical rule maps to:
 
 ## Related Documents
 
+- `ProductRequirementsSpecification.md`
+- `RequirementsTraceabilityMatrix.md`
+- `CriticalEngineeringRules.md`
 - `../Governance/DecisionRegister.md`
 - `../Workflow/CR-001-MechanicalRebaselineDecision.md`
 - `../Workflow/ProjectLifecycle.md`

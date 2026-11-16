@@ -18,7 +18,7 @@
 
 - Documentation addresses a technical audience.
 - Technical content describes product behavior, engineering intent, implementation contracts, evidence, and acceptance criteria.
-- Project-owner communication belongs in the chat, issue tracker, and pull-request discussion.
+- Repository documentation presents technical content, engineering decisions, implementation contracts, and verification evidence.
 - Documentation presents approved technical outcomes and traceable engineering facts.
 
 ## Decision Standard

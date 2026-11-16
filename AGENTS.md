@@ -4,6 +4,12 @@
 
 These instructions govern every repository task. Active documents listed in `Docs/DocumentationHub.md` provide the product and engineering baseline.
 
+## Instruction Persistence
+
+- Read this file, `Docs/DocumentationHub.md`, and `Docs/Governance/DecisionRegister.md` before every scoped task.
+- Treat every rule in this file as a mandatory acceptance criterion.
+- Record each new standing project rule in this file and its authoritative governance document during the same pull request.
+
 ## Documentation Rules
 
 - Write every documentation file in US English.
@@ -11,16 +17,18 @@ These instructions govern every repository task. Active documents listed in `Doc
 - Give every statement one precise technical meaning.
 - Record one selected outcome for every decision.
 - Write for a technical audience.
-- Keep project-owner communication in the chat or issue tracker.
 - Include status, scope, inputs, outputs, acceptance criteria, and related references where applicable.
 - Update documentation before implementation when product behavior, engineering rules, or workflow behavior changes.
 
 ## SolidWorks Engineering Rules
 
-- Use SolidWorks 2026 documentation as the authoritative API and feature reference.
+- Use SolidWorks 2026 documentation as the sole authority for API behavior, feature behavior, automation contracts, and supported capabilities.
 - Model each CAD operation as a fully defined professional engineering workflow.
 - Use current SolidWorks 2026 capabilities that support deterministic, maintainable, and manufacturable results.
 - Define geometry, references, features, mates, configurations, tolerances, and output intent explicitly.
+- Define the mechanical and manufacturing engineering intent before representing each operation in software.
+- Make each automated operation equivalent to the deliberate workflow of a highly experienced mechanical engineer working directly in SolidWorks 2026.
+- Preserve fully defined engineering state across sketches, features, parts, assemblies, drawings, configurations, and manufacturing outputs.
 - Place a `README.md` file in every code directory.
 - Describe directory purpose, responsibilities, inputs, outputs, dependencies, invariants, engineering context, and verification approach in each code-directory README.
 

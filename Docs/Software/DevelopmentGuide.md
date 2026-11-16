@@ -7,7 +7,7 @@
 
 ## Authoritative References
 
-- SolidWorks 2026 documentation defines API behavior, feature behavior, automation contracts, and supported capabilities.
+- SolidWorks 2026 documentation provides the sole authority for API behavior, feature behavior, automation contracts, and supported capabilities.
 - Active project documentation defines mechanical intent, configuration behavior, validation behavior, naming behavior, and output behavior.
 - The Project Decision Register identifies the approved decision set.
 

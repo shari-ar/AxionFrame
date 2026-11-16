@@ -2,7 +2,7 @@
 
 - **Title:** CR-001 Mechanical Rebaseline Decision
 - **Status:** Approved
-- **Owner:** Product Owner
+- **Owner:** Engineering Governance
 - **Effective Date:** 2026-11-15
 - **Scope:** Controlled transition from the original height-adjustable frame baseline to the selected fixed-height parametric workbench baseline.
 
@@ -10,7 +10,7 @@
 
 AxionFrame continues in the existing repository and preserves its engineering and software history. The active product baseline uses the selected fixed-height X-frame workbench concept documented in `Docs/Mechanical/DesignAndManufacturing.md`.
 
-The product owner selected this X-frame concept as the sole concept input for engineering development. The engineering workflow records Design Intent, Requirements, Feasibility, Engineering Proof, and Mechanical Baseline approval.
+The approved X-frame concept provides the sole concept input for engineering development. The engineering workflow records Design Intent, Requirements, Feasibility, Engineering Proof, and Mechanical Baseline approval.
 
 ## Reused Software Assets
 
